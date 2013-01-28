@@ -1,0 +1,25 @@
+**2013 Jan 27**
+Used stdbool.h as per c99 standard to define the boolean type
+
+**2013 Jan 25**
+Implemented function to Check Path Validity 
+Refactor dbkey, extract_audio_taglib files
+Convert extracted tags to title case
+
+**2013 Jan 16**
+removed remove_file error regarding dangling reference in database
+fixed some more memory leaks
+worked on previos code refactoring
+added read, open, write, truncate, release, rename
+working: ls cd cp mv cat rm mkdir rmdir chmod chown
+
+**2013 Jan 15**
+fixed code for mkdir, added code for rename_file function
+working: ls cd rm rmdir mkdir
+
+**2013 Jan 14**
+corrected errors related to magic strings, formatting, pointer corrections, path parsing
+working: ls cd rm rmdir
+fixed some memory leaks
+refactored code to reduce redundancy
+fixed multiple/duplicate flags

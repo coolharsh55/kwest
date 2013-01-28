@@ -1,0 +1,37 @@
+KWEST - A SEMANTICALLY TAGGED VIRTUAL FILESYSTEM
+
+all the files are currently in "src" with the makefile
+makefile commands are:
+
+make
+make clean - clean compiled object files, executables
+make clean - clean compiled files, and config directory
+
+creates executable "kwest"
+$mkdir mnt
+$./kwest mnt
+./kwest is the executable
+mnt is the mountpoint
+similar to regular mounting from devices
+$cd mnt
+$mnt: ls
+$mnt browse as filesystem
+when need to unmount, return to "parent" of "mnt"
+$fusermount -u mnt
+
+
+Known dependencies:
+gcc
+fuse version 2.8+
+	$sudo apt-get install fuse libfuse-dev
+sqlite3 3.7.14+
+	$sudo apt-get install sqlite3 libsqlite3-dev
+taglib (requires cmake to compile from source)
+	$sudo apt-get install cmake
+	$wget -c https://github.com/downloads/taglib/taglib/taglib-1.8.tar.gz
+	$tar xvfz taglib-1.8.tar.gz
+	$cd taglib-1.8.tar.gz
+	$cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_RELEASE_TYPE=Release
+	$make
+	$sudo make install
+
