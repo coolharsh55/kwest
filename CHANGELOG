@@ -1,3 +1,7 @@
+**2013 Feb 02**
+added operation fuse_destroy
+calls database close, logfile close on fs unmount
+
 **2013 Jan 27**
 Used stdbool.h as per c99 standard to define the boolean type
 

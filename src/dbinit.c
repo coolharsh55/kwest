@@ -136,6 +136,8 @@ int close_db(void)
 
 	if (status != SQLITE_OK) {  
 		log_msg("%s", ERR_DB_CLOSE);
+	} else {
+		log_msg("database successfully closed!");
 	}
 
 	return status;

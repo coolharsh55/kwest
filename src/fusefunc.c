@@ -21,6 +21,7 @@
 
 #include "fusefunc.h"
 #include "dbfuse.h"
+#include "dbinit.h"
 #include "logging.h"
 #include "flags.h"
 
@@ -172,6 +173,14 @@ static int kwest_access(const char *path, int mask)
 }
 
 
+void kwest_destroy(void *private_data)
+{
+	log_msg("filesytem is being unmounted...");
+	close_db();
+	log_close();
+}
+
+
 /* __FUSE FILESYSTEM OPERATIONS STRUCTURE__ */
 
 /* kwest_oper
@@ -184,6 +193,8 @@ static struct fuse_operations kwest_oper = {
 	.getattr = kwest_getattr,
 	.readdir = kwest_readdir,
 	.access = kwest_access,
+	.truncate = kwest_truncate, 
+	.destroy = kwest_destroy,
 	
 /* FILE RELATED FILESYSTEM OPERATIONS */
 	.open		= kwest_open,
@@ -204,7 +215,7 @@ static struct fuse_operations kwest_oper = {
 /*	.symlink	= kwest_symlink, */
 /*	.readlink	= kwest_readlink, */
 /*	.link		= kwest_link, */
-	.truncate	= kwest_truncate, 
+	
 /*	.utimens	= kwest_utimens, */
 /*	.statfs		= kwest_statfs, */
 /*	.fsync		= kwest_fsync, */
