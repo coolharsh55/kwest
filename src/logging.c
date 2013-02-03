@@ -1,5 +1,8 @@
-/* logging.c
- * functions for logging filesystem operations
+/**
+ * @file logging.c
+ * @brief functions for logging filesystem operations
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
 
 /* LICENSE
@@ -18,25 +21,24 @@
  */
  
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <sys/stat.h>
 #include <pwd.h>
-#include <string.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "logging.h"
 #include "flags.h"
 
-/* log_init
- * initialize logging
- * 
- * @param none
- * @return KW_SUCCESS on success, KW_FAIL on fail
- * @author @HP
+
+/**
+ * @brief Get logfile
+ * @param void
+ * @return logfile : SUCCESS, NULL : FAIL
+ * @author HP
  */
- 
-static void *get_logfile()
+static void *get_logfile(void)
 {
 	static FILE *logfile = NULL; /* file pointer for logfile */
 	struct passwd *pw = NULL;
@@ -59,6 +61,13 @@ static void *get_logfile()
 	}
 	return logfile;
 }
+
+/**
+ * @brief initialize logging
+ * @param void
+ * @return KW_SUCCESS : SUCCESS, KW_FAIL : FAIL
+ * @author HP
+ */
 int log_init(void)
 {
 	if(get_logfile() == NULL) {
@@ -67,12 +76,11 @@ int log_init(void)
 	return KW_SUCCESS;
 }
 
-/* log_msg
- * print log message to logfile
- * 
- * @param none
- * @return none
- * @author @HP 
+/**
+ * @brief print log message to logfile
+ * @param msg - Message to be displayed in logfile
+ * @return void
+ * @author HP 
  */
 void log_msg(const char *msg, ...)
 {
@@ -83,12 +91,11 @@ void log_msg(const char *msg, ...)
     va_end(argptr);
 }
 
-/* log_close
- * close the logfile
- * 
- * @param none
- * @return none
- * @author @HP
+/**
+ * @brief close the logfile
+ * @param void
+ * @return KW_SUCCESS : SUCCESS, -errorno : ERROR
+ * @author HP
  */
 int log_close(void)
 {

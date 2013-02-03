@@ -1,5 +1,8 @@
-/* audio.c
- * metadata and relations associated with audio metadata
+/**
+ * @file extract_metadata.c
+ * @brief Rules associated with file type 
+ * @author Sahil Gupta
+ * @date December 2012
  */
 
 /* LICENSE
@@ -23,9 +26,13 @@
 #include "flags.h"
 #include "magicstrings.h"
 
-
-/* is this really necessary to put in this file? */
-int audio_metadata()
+/**
+ * @brief Rules for Audio files 
+ * @param void
+ * @return KW_SUCCESS : SUCCESS
+ * @author SG
+ */
+int audio_metadata(void)
 {
 	/* Create tags to browse Audio Files */
 	add_tag(TAG_AUDIO, SYSTEM_TAG);
@@ -47,5 +54,3 @@ int audio_metadata()
 	
 	return KW_SUCCESS;
 }
-
-

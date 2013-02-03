@@ -1,5 +1,8 @@
-/* fusefunc.h
- * functions for logging filesystem operations
+/**
+ * @file fusefunc.h
+ * @brief fuse functions implementations
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
 
 /* LICENSE
@@ -17,20 +20,13 @@
  * limitations under the License.
  */
  
- #ifndef KWEST_FUSEFUNC_H
- #define KWEST_FUSEFUNC_H
+#ifndef KWEST_FUSEFUNC_H
+#define KWEST_FUSEFUNC_H
 
 
-/* call_fuse_daemon
+/*
  * pass control to fuse daemon
- *  
- * @param int argc
- * @param int argv
- * @return 0: SUCCESS, -errno: error
- * @author @HP
- * 
  */
 int call_fuse_daemon(int argc, char **argv);
-
 
 #endif

@@ -1,7 +1,10 @@
-/* dbkey.c
- * handle requests for files and tags
+/**
+ * @file dbkey.c
+ * @brief handle requests for files and tags
+ * @author Sahil Gupta
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Sahil Gupta
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,20 +23,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sqlite3.h>    /* SQLITE Functions */
-
-#include "dbinit.h"
+#include <sqlite3.h>
 
 #include "dbkey.h"
+#include "dbinit.h"
 #include "flags.h"
 
 
-/* get_field_count
- * Return count of entries in database
- * 
- * @param const char *querystring 
- * @return int count
- * @author @SG
+/**
+ * @brief Return count of entries in database
+ * @param querystring 
+ * @return count
+ * @author SG
  */
 static int get_field_count(const char *querystring)
 {
@@ -56,10 +57,11 @@ static int get_field_count(const char *querystring)
 	return KW_FAIL;
 }
 
-/* set_file_id: Generate id for new file to be added in kwest
- * param: char *abspath - Absolute Path of File
- * return: int fno
- * author: @SG 
+/**
+ * @brief Generate id for new file to be added in kwest
+ * @param abspath - Absolute Path of File
+ * @return fno
+ * @author SG 
  */
 int set_file_id(const char *abspath)
 {
@@ -83,11 +85,12 @@ int set_file_id(const char *abspath)
 	}
 }
 
-
-/* set_tag_id: Generate id for a new tag to be created in kwest
- * param: char *tagname
- * return: int tno 
- * author: @SG 
+/**
+ * @brief Generate id for new tag to be created in kwest
+ * @param tagname
+ * @param tagtype
+ * @return tno 
+ * @author SG 
  */
 int set_tag_id(const char *tagname,int tagtype)
 {
@@ -131,13 +134,12 @@ int set_tag_id(const char *tagname,int tagtype)
 }
 
 
-/* get_field_id
- * Return id for specified field
- * 
- * @param const char *querystring 
- * @param const char *fieldname
- * @return int field_id
- * @author @SG @HP
+/**
+ * @brief Return id for specified field
+ * @param querystring 
+ * @param fieldname
+ * @return field_id
+ * @author SG HP
  */
 static int get_field_id(const char *querystring, const char *fieldname)
 {
@@ -161,42 +163,37 @@ static int get_field_id(const char *querystring, const char *fieldname)
 	return KW_FAIL;
 }
 
-
-/* get_file_id
- * Return id for file in kwest
- * 
- * @param char *fname - Name of File
- * @return int fno 
- * @author @SG @HP
+/**
+ * @brief Return id for file in kwest
+ * @param fname - file name
+ * @return fno 
+ * @author SG HP
  */
 int get_file_id(const char *fname)
 {
 	return get_field_id("select fno from FileDetails where "
-	                     "fname = :fieldname;", fname);
+	                    "fname = :fieldname;", fname);
 }
 
-
-/* get_tag_id
- * Return id for a tag in kwest
- * 
- * @param char *tagname
- * @return int tno 
- * @author @SG @HP
+/**
+ * @brief Return id for a tag in kwest
+ * @param tname - tagname
+ * @return tno 
+ * @author SG HP
  */
 int get_tag_id(const char *tname)
 {
 	return get_field_id("select tno from TagDetails where "
-	                     "tagname = :fieldname;", tname);
+	                    "tagname = :fieldname;", tname);
 }
 
 
-/* get_field_name
- * Retrieve fieldname if exists
- * 
- * @param const char *querystring 
- * @param int fieldno
- * @return char *fieldname
- * @author @SG @HP
+/**
+ * @brief Retrieve fieldname if exists
+ * @param querystring 
+ * @param fieldno
+ * @return fieldname
+ * @author SG HP
  */
 const char *get_field_name(const char *querystring, int fieldno)
 {
@@ -218,31 +215,27 @@ const char *get_field_name(const char *querystring, int fieldno)
 	return fieldname;
 }
 
-
-/* get_file_name
- * Retrieve filename by its id
- * 
- * @param int fno - file number 
- * @return char *filename
- * @author @SG @HP
+/**
+ * @brief Retrieve filename by its id
+ * @param fno - file number 
+ * @return filename
+ * @author SG HP
  */
 const char *get_file_name(int fno)
 {
 	return get_field_name("select fname from FileDetails where "
-	                       "fno = %d;", fno);
+	                      "fno = %d;", fno);
 }
 
-
-/* get_tag_name
- * Retrieve tag name by its id
- * 
- * @param int tno - tag number
- * @return char *tagname
- * @author @SG @HP
+/**
+ * @brief Retrieve tag name by its id
+ * @param tno - tag number
+ * @return tagname
+ * @author SG HP
  */
 const char *get_tag_name(int tno)
 {
 	return get_field_name("select tagname from TagDetails where "
-	                       "tno = %d", tno);
+	                      "tno = %d", tno);
 }
 

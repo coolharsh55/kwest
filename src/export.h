@@ -1,5 +1,8 @@
-/* export.h
- * export kwest path & files to external location
+/**
+ * @file export.h
+ * @brief export kwest path & files to external location
+ * @author Sahil Gupta
+ * @date December 2012
  */
 
 /* LICENSE
@@ -17,19 +20,13 @@
  * limitations under the License.
  */
 
-
-/* Database Functions Required:
- * int close_db(void);
- * sqlite3_stmt *get_association(char *tag,int relationid);
- * sqlite3_stmt *get_file_abspath(char *tag);
- * const char* get_data(sqlite3_stmt *stmt);
- */
+#ifndef EXPORT_H_INCLUDED
+#define EXPORT_H_INCLUDED
 
 
-/* export: Exports a tag in kwest as Directory-file structure on File System
- * param: char *tag - Tag name in Kwest
- * param: char *path - Absolute Path of Location where tag is to be exported
- * return: KW_SUCCESS on SUCCESS
- * author: @SG
+/*
+ * Exports a tag in kwest as Directory-file structure on File System
  */
 int export(const char *tag,const char *path);
+
+#endif

@@ -1,7 +1,10 @@
-/* dbinit.c
- * create and initialize the database
+/**
+ * @file dbinit.h
+ * @brief create and initialize database
+ * @author Sahil Gupta
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Sahil Gupta
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,35 +26,28 @@
 #include <sqlite3.h>
 
 
-/* ------------ Database Connections -------------- */
-
-/* get_kwdb: Initialize Return sqlite* Object
- * return: sqlite3 pointer
- * author: @SG
+/*
+ * Initialize Return sqlite pointer object
  */
 sqlite3 *get_kwdb(void);
 
-/* create_db: Create Kwest database for first use
- * return: 0 on SUCCESS
- * author: @SG
+/*
+ * Create Kwest database for first use
  */
 int create_db(void);
 
-/* close_db: Close Kwest Database Connection
- * return: 0 on SUCCESS
- * author: @SG
+/*
+ * Close Kwest Database Connection
  */
 int close_db(void);
 
-/* begin_transaction: 
- * return: 0 on SUCCESS
- * author: @SG
+/*
+ * Begin transaction
  */
 int begin_transaction(void);
 
-/* commit_transaction: 
- * return: 0 on SUCCESS
- * author: @SG
+/*
+ * Commit transaction
  */
 int commit_transaction(void);
 

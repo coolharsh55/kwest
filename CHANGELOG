@@ -1,3 +1,7 @@
+**2013 Feb 03**
+fixed bug : Trying to redirect stderror to file in a non-existent folder
+Commenting for Doxygen
+
 **2013 Feb 02**
 added operation fuse_destroy
 calls database close, logfile close on fs unmount

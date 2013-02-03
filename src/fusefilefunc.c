@@ -1,7 +1,10 @@
-/* fusefilefunc.c
- * fuse file related operations
+/**
+ * @file fusefilefunc.c
+ * @brief fuse file related operations
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Harshvardhan Pandit
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,15 +21,14 @@
  */
  
  
-/* kwest_open
- * open a file for read/write operations
- *  
- * @param const char *path
- * @param struct fuse_file_info *fi: fuse file handle
+/**
+ * @brief open a file for read/write operations
+ * @param path
+ * @param fi: fuse file handle
  * @return 0: SUCCESS, -errno: error
- * @author @HP
+ * @author HP
  */
- static int kwest_open(const char *path, struct fuse_file_info *fi)
+static int kwest_open(const char *path, struct fuse_file_info *fi)
 {
 	int res;
 	const char *abspath = NULL;
@@ -54,13 +56,12 @@
 }
 
 
-/* kwest_release
- * called when last handle to file is closed
- *  
- * @param const char *path
- * @param struct fuse_file_info *fi: fuse file handle
+/**
+ * @brief called when last handle to file is closed
+ * @param path
+ * @param fi: fuse file handle
  * @return 0: SUCCESS, -errno: error
- * @author @HP 
+ * @author HP 
  */
 static int kwest_release(const char *path, struct fuse_file_info *fi)
 {
@@ -72,15 +73,13 @@ static int kwest_release(const char *path, struct fuse_file_info *fi)
 }
 
 
-
-/* kwest_mknod
- * called when creating a new file
- *  
- * @param const char *path
- * @param mode_t mode: file permissions and mode
- * @param dev_t dev:
+/**
+ * @brief called when creating a new file
+ * @param path
+ * @param mode: file permissions and mode
+ * @param dev
  * @return 0: SUCCESS, -errno: error
- * @author @HP 
+ * @author HP 
  */
 static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 {
@@ -120,13 +119,12 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 }
 
 
-/* kwest_rename
- * rename a file to specified name
- *  
- * @param const char *from: original filename and path
- * @param const char *to: specified name and path
+/**
+ * @brief rename a file to specified name
+ * @param from: original filename and path
+ * @param to: specified name and path
  * @return 0: SUCCESS, -errno: error
- * @author @HP
+ * @author HP
  */ 
 static int kwest_rename(const char *from, const char *to)
 {
@@ -141,12 +139,11 @@ static int kwest_rename(const char *from, const char *to)
 }
 
 
-/* kwest_unlink
- * remove file entry from system
- *  
- * @param const char *path
+/**
+ * @brief remove file entry from system
+ * @param path
  * @return 0: SUCCESS, -errno: error
- * @author @HP 
+ * @author HP 
  */
 static int kwest_unlink(const char *path)
 {
@@ -162,16 +159,15 @@ static int kwest_unlink(const char *path)
 }
 
 
-/* kwest_read
- * read specified bytes from file
- *  
- * @param const char *path
- * @param char *buf: buffer to hold bytes
- * @param size_t size: size of data to be read
- * @param off_t offset: offset of last read
- * @param struct fuse_file_info *fi: fuse file handle
+/**
+ * @brief read specified bytes from file
+ * @param path
+ * @param buf: buffer to hold bytes
+ * @param size: size of data to be read
+ * @param offset: offset of last read
+ * @param fi: fuse file handle
  * @return 0: SUCCESS, -errno: error
- * @author @HP 
+ * @author HP 
  */
 static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
@@ -210,19 +206,18 @@ static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 }
 
 
-/* kwest_write
- * write specified bytes to file
- *  
- * @param const char *path
- * @param char *buf: buffer to hold bytes
- * @param size_t size: size of data to be written
- * @param off_t offset: offset of last read
- * @param struct fuse_file_info *fi: fuse file handle
+/**
+ * @brief write specified bytes to file
+ * @param path
+ * @param buf: buffer to hold bytes
+ * @param size: size of data to be written
+ * @param offset: offset of last read
+ * @param fi: fuse file handle
  * @return 0: SUCCESS, -errno: error
- * @author @HP 
+ * @author HP 
  */
 static int kwest_write(const char *path, const char *buf, size_t size,
-		     off_t offset, struct fuse_file_info *fi)
+                       off_t offset, struct fuse_file_info *fi)
 {
 	int fd = 0;
 	int res = 0;
@@ -255,6 +250,13 @@ static int kwest_write(const char *path, const char *buf, size_t size,
 }
 
 
+/**
+ * @brief truncate file
+ * @param path
+ * @param size
+ * @return 0: SUCCESS, -errno: error
+ * @author HP 
+ */
 static int kwest_truncate(const char *path, off_t size)
 {
 	log_msg("truncate: %s", path);
@@ -283,13 +285,13 @@ static int kwest_truncate(const char *path, off_t size)
 	return 0;
 }
 
-/* kwest_chmod
- * chande file modes and permissions
- *  
- * @param const char *path
- * @param mode_t mode: mode of file to be set
+
+/**
+ * @brief chande file modes and permissions
+ * @param path
+ * @param mode: mode of file to be set
  * @return 0: SUCCESS, -errno: error
- * @author @HP 
+ * @author HP 
  */
 static int kwest_chmod(const char *path, mode_t mode)
 {
@@ -312,19 +314,18 @@ static int kwest_chmod(const char *path, mode_t mode)
 	if (res == -1) {
 		return -errno;
 	}
-
+	
 	return 0;
 }
 
 
-/* kwest_chown
- * change file owner and permissions
- *  
- * @param const char *path
- * @param uid_t uid:
- * @param git_t gid:
+/**
+ * @brief change file owner and permissions
+ * @param path
+ * @param uid
+ * @param gid
  * @return 0: SUCCESS, -errno: error
- * @author @HP 
+ * @author HP 
  */
 static int kwest_chown(const char *path, uid_t uid, gid_t gid)
 {
@@ -346,6 +347,6 @@ static int kwest_chown(const char *path, uid_t uid, gid_t gid)
 	res = lchown(abspath, uid, gid);
 	if (res == -1)
 		return -errno;
-
+	
 	return 0;
 }

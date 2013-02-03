@@ -1,5 +1,9 @@
-/* flags.h
- * flags used by KWEST programs
+/**
+ * @file flags.h
+ * @brief Flags used by KWEST programs
+ * @author Harshvardhan Pandit
+ * @author Sahil Gupta
+ * @date December 2012
  */
 
 /* LICENSE
@@ -25,22 +29,23 @@
 #include <stdbool.h>
 #include "magicstrings.h"
 
+
 /* RETURN VALUES FOR KWEST FUNCTIONS */
 #define KW_SUCCESS 0 /* return SUCCESS as status */
-#define KW_FAIL -1 /* return FAILED as status */
-#define KW_ERROR 1 /* return ERROR as status */
+#define KW_FAIL   -1 /* return FAILED as status */
+#define KW_ERROR   1 /* return ERROR as status */
+
 
 /* FLAGS RELATED TO FUSE, DIRECTORY VALUES */
 #define KW_STDIR 0755 /* DIR entry in struct stat */
 #define KW_STFIL 0444 /* FILE entry in struct stat */
 
-/* FLAGS RELATED TO DATABASE OPERATIONS */
-/* CONSTANTS START FROM 101 */
 
+/* FLAGS RELATED TO DATABASE OPERATIONS */
 #define QUERY_SIZE 512 /* Size of array holding query */
 
 #define USER_TAG   1 /* Tag Accessible to user */
-#define SYSTEM_TAG 2 /* Size of array holding query */
+#define SYSTEM_TAG 2 /* Tag created and used by system */
 
 /* Starting id for tags and files */
 #define NO_DB_ENTRY      0

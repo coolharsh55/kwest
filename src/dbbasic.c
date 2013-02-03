@@ -1,5 +1,8 @@
-/* dbbasic.c
- * basic interation with database
+/**
+ * @file dbbasic.c
+ * @brief basic interation with database
+ * @author Sahil Gupta
+ * @date December 2012
  */
 
 /* LICENSE
@@ -20,42 +23,38 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sqlite3.h>    /* SQLITE Functions */
+#include <sqlite3.h>
 
+#include "dbbasic.h"
 #include "dbinit.h"
 #include "dbkey.h"
 #include "extract_audio_taglib.h"
-
-#include "dbbasic.h"
 #include "logging.h"
 #include "flags.h"
 #include "magicstrings.h"
 
+
 /* ---------- Local Functions --------------------- */
 
-/* add_metadata_file: Extract and add metadata for file in kwest
- * param: file ID, absolute path ,file name
- * return: 0 on SUCCESS
- * author: @SG
+/*
+ * Extract and add metadata for file in kwest
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname);
 
-/* associate_file_metadata: Form association for metadata in file
- * param: metatype - Metadata Category
- * param: tagname - Metadata
- * peram: fname - File Name 
- * return: 0 on SUCCESS
- * author: @SG
+/*
+ * Form association for metadata in file
  */
-static int associate_file_metadata(const char *metatype,const char *tagname,
+static void associate_file_metadata(const char *metatype,const char *tagname,
                             const char *fname);
 
 /* ---------------- ADD/REMOVE -------------------- */
 
-/* add_tag: Create a new user tag in kwest 
- * param: char *tagname
- * return: 0 on SUCCESS
- * author: @SG
+/**
+ * @brief Create a new user tag in kwest 
+ * @param tagname
+ * @param tagtype - systemtag / usertag
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG
  */
 int add_tag(const char *tagname,int tagtype)
 {
@@ -77,7 +76,7 @@ int add_tag(const char *tagname,int tagtype)
 	} 
 	
 	/* Insert (tno, tagname) in TagDetails Table */
-	strcpy(query,"INSERT INTO TagDetails VALUES(:tno,:tagname);");
+	strcpy(query,"insert into TagDetails values(:tno,:tagname);");
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 	
 	sqlite3_bind_int(stmt,1,tno);
@@ -93,10 +92,11 @@ int add_tag(const char *tagname,int tagtype)
 	return KW_FAIL;
 }
 
-/* remove_tag: Remove an existing tag from kwest 
- * param: char *tagname
- * return: 0 on SUCCESS
- * author: @SG
+/**
+ * @brief Remove an existing tag from kwest 
+ * @param tagname
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG
  */
 int remove_tag(const char *tagname)
 {
@@ -132,10 +132,11 @@ int remove_tag(const char *tagname)
 	return KW_FAIL;
 }
 
-/* add_file: Add file to kwest
- * param: char *abspath
- * return: 0 on SUCCESS
- * author: @SG
+/**
+ * @brief Add file to kwest
+ * @param abspath
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG
  */
 int add_file(const char *abspath)
 {
@@ -153,7 +154,7 @@ int add_file(const char *abspath)
 	} 
 	
 	/* Query : Insert (fno, fname, abspath) in FileDetails Table */
-	strcpy(query,"INSERT INTO FileDetails VALUES(:fno,:fname,:abspath);");
+	strcpy(query,"insert into FileDetails values(:fno,:fname,:abspath);");
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 	
 	sqlite3_bind_int(stmt,1,fno);
@@ -178,10 +179,13 @@ int add_file(const char *abspath)
 	return KW_FAIL;
 }
 
-/* add_metadata_file: Extract and add metadata for file in kwest
- * param: file ID, absolute path ,file name
- * return: 0 on SUCCESS
- * author: @SG
+/**
+ * @brief Extract and add metadata for file in kwest
+ * @param int fno - file id 
+ * @param abspath - absolute path
+ * @param fname - file name
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG HP
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname)
 {
@@ -207,7 +211,7 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	/*! is this title,artist,album etc field necessary?
 	 * how are we supposed to store metadata in an abstract way?
 	 */
-	strcpy(query,"INSERT INTO Audio VALUES"
+	strcpy(query,"insert into Audio values"
 	             "(:fno,:title,:artist,:album,:genre);");
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0); 
 	
@@ -230,6 +234,9 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 		associate_file_metadata(TAG_GENRE,M.genre,fname);
 	} else { /* Handle if Error while Adding Metadata */
 		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,fname);
+		extract_clear_strings(meta);
+		sqlite3_finalize(stmt);
+		return KW_FAIL;
 	}
 	extract_clear_strings(meta);
 	sqlite3_finalize(stmt);
@@ -237,14 +244,15 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	return KW_SUCCESS;
 }
 
-/* associate_file_metadata: Form association for metadata in file
- * param: metatype - Metadata Category
- * param: tagname - Metadata
- * peram: fname - File Name 
- * return: 0 on SUCCESS
- * author: @SG
+/**
+ * @brief Form association for metadata in file
+ * @param metatype - metadata category
+ * @param tagname - metadata
+ * @param fname - file name 
+ * @return void
+ * @author SG
  */
-static int associate_file_metadata(const char *metatype,const char *tagname,
+static void associate_file_metadata(const char *metatype,const char *tagname,
                             const char *fname)
 {
 	char *newtag=NULL;
@@ -269,14 +277,13 @@ static int associate_file_metadata(const char *metatype,const char *tagname,
 		/* Tag File to Metadata Tag */
 		tag_file(tagname,fname);
 	}
-	
-	return KW_SUCCESS;
 }
 
-/* remove_file: Remove file form kwest 
- * param: char *fname - File name
- * return: 0 on SUCCESS
- * author: @SG 
+/**
+ * @brief Remove file form kwest 
+ * @param fname - File name
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG 
  */
 int remove_file(const char *fname)
 {
@@ -310,11 +317,12 @@ int remove_file(const char *fname)
 	return KW_FAIL;
 }
 
-/* add_meta_info: Add new category to identify metadata 
- * param: filetype - Type of File
- * param: tag - Category of Metadata
- * return: 0 on SUCCESS
- * author: @SG  
+/**
+ * @brief Add new category to identify metadata 
+ * @param filetype - Type of File
+ * @param tag - Category of Metadata
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG  
  */
 int add_meta_info(const char *filetype,const char *tag)
 {
@@ -337,7 +345,7 @@ int add_meta_info(const char *filetype,const char *tag)
 	sqlite3_finalize(stmt);
 	
 	/* Query to add metainfo */
-	sprintf(query,"INSERT INTO MetaInfo VALUES('%s','%s');",filetype,tag);
+	sprintf(query,"insert into MetaInfo values('%s','%s');",filetype,tag);
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 	
 	if(status == SQLITE_OK){
@@ -349,11 +357,12 @@ int add_meta_info(const char *filetype,const char *tag)
 
 /* --------------- Tag-File Relation ------------- */
 
-/* tag_file: Associate a tag with a file 
- * param: char *t - tagname
- * param: char *f - filename
- * return: 1 on SUCCESS
- * author: @SG
+/**
+ * @brief Associate a tag with a file
+ * @param t - tagname
+ * @param f - filename
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG
  */
 int tag_file(const char *t,const char *f)
 {
@@ -404,11 +413,12 @@ int tag_file(const char *t,const char *f)
 	return KW_FAIL;
 }
 
-/* untag_file: Remove the existing association between the tag and file
- * param: char *t - tagname
- * param: char *f - filename
- * return: 0 on SUCCESS
- * author: @SG
+/**
+ * @brief Remove the existing association between the tag and file
+ * @param t - tagname
+ * @param f - filename
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG
  */
 int untag_file(const char *t,const char *f)
 {
@@ -463,10 +473,11 @@ int untag_file(const char *t,const char *f)
 	return KW_SUCCESS;
 }
 
-/* get_fname_under_tag: Return list of files associated to given tag 
- * param: char *t - tagname
- * return: sqlite3_stmt pointer
- * author: @SG
+/**
+ * @brief Return list of files associated to given tag 
+ * @param t - tagname
+ * @return sqlite3_stmt pointer : SUCCESS, NULL : FAIL
+ * @author SG
  */
 sqlite3_stmt *get_fname_under_tag(const char *t)
 {
@@ -494,10 +505,11 @@ sqlite3_stmt *get_fname_under_tag(const char *t)
 	return stmt;
 }
 
-/* get_tags_for_file: Return list of tags associated with a given file
- * param: char *f - filename
- * return: sqlite3_stmt pointer
- * author: @SG 
+/**
+ * @brief Return list of tags associated with a given file
+ * @param f - filename
+ * @return sqlite3_stmt pointer : SUCCESS, NULL : FAIL
+ * @author SG 
  */
 sqlite3_stmt *get_tags_for_file(const char *f)
 {
@@ -528,11 +540,12 @@ sqlite3_stmt *get_tags_for_file(const char *f)
 
 /*----------------- Tag-Tag Relation ------------------*/
 
-/* add_association: Associate a tag with another tag 
- * param: char *t1,*t2 - tagname of both tags to be associated
- * param: int associationid - relation between tags to be formed
- * return: 0 on SUCCESS
- * author: @SG
+/**
+ * @brief Associate a tag with another tag 
+ * @param t1,t2 - tagname of both tags to be associated
+ * @param associationid - relation between tags to be formed
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG
  */
 int add_association(const char *t1,const char *t2,int associationid)
 {
@@ -575,11 +588,12 @@ int add_association(const char *t1,const char *t2,int associationid)
 	return KW_FAIL;
 }
 
-/* remove_association: Remove the existing association between the two tags 
- * param: char *t1,*t2 - tagname of both tags whose associated is to be removed
- * param: int associationid - relation between tags to be removed
- * return: 0 on SUCCESS
- * author: @SG
+/**
+ * @brief Remove the existing association between the two tags 
+ * @param t1,t2 - tagname of both tags whose associated is to be removed
+ * @param associationid - relation between tags to be removed
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG
  */
 int remove_association(const char *t1,const char *t2,int associationid)
 {
@@ -589,7 +603,8 @@ int remove_association(const char *t1,const char *t2,int associationid)
 	
 	/* Return if relation Undefined */
 	if(is_association_type(associationid) == 0){ 
-		printf("remove_association : %s%d",ERR_REL_NOT_DEF,associationid);
+		printf("remove_association : %s%d",ERR_REL_NOT_DEF,
+		       associationid);
 		return KW_ERROR;
 	}
 	
@@ -618,10 +633,11 @@ int remove_association(const char *t1,const char *t2,int associationid)
 	return KW_FAIL;
 }
 
-/* get_association: Return type of association between the two tags
- * param: char *t1,*t2 - tagname of both tags in association
- * return: int associationid
- * author: @SG
+/**
+ * @brief Return type of association between the two tags
+ * @param t1,t2 - tagname of both tags in association
+ * @return associationid : SUCCESS, KW_FAIL : FAIL, KW_ERROR : ERROR
+ * @author SG
  */
 int get_association(const char *t1,const char *t2)
 {
@@ -658,11 +674,12 @@ int get_association(const char *t1,const char *t2)
 	return KW_FAIL; /*No association between tags*/
 }
 
-/* get_tags_by_association: Get tags having association with another tag 
- * param: char *t - tagname
- * param: int associationid - relation between tags
- * return: sqlite3_stmt pointer
- * author: @SG 
+/**
+ * @brief Get tags having association with another tag 
+ * @param t - tagname
+ * @param associationid - relation between tags
+ * @return sqlite3_stmt pointer: SUCCESS, NULL : FAIL
+ * @author SG 
  */
 sqlite3_stmt *get_tags_by_association(const char *t,int associationid)
 {
@@ -673,7 +690,8 @@ sqlite3_stmt *get_tags_by_association(const char *t,int associationid)
 	
 	/* Return if relation Undefined */
 	if(is_association_type(associationid) == 0){ 
-		log_msg("get_tags_by_assocn : %s%d",ERR_REL_NOT_DEF,associationid);
+		log_msg("get_tags_by_assocn : %s%d",ERR_REL_NOT_DEF,
+		        associationid);
 		return NULL;
 	}
 	
@@ -699,10 +717,11 @@ sqlite3_stmt *get_tags_by_association(const char *t,int associationid)
 
 /* ----------------- Associations --------------------- */
 
-/* add_association_type: Create a new association type 
- * param: char *associationtype
- * return: int associationid
- * author: @SG 
+/**
+ * @brief Create a new association type 
+ * @param associationtype
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG 
  */
 int add_association_type(const char *associationtype)
 {
@@ -741,7 +760,7 @@ int add_association_type(const char *associationtype)
 		sqlite3_finalize(stmt); 
 		
 		/* Query:add (assocnid,assocntype) to Association Table */
-		sprintf(query,"INSERT INTO Associations VALUES(%d,'%s');",
+		sprintf(query,"insert into Associations values(%d,'%s');",
 		        associationid,associationtype);
 		status = sqlite3_exec(get_kwdb(),query,0,0,0);
 		
@@ -754,10 +773,11 @@ int add_association_type(const char *associationtype)
 	return KW_FAIL;
 }
 
-/* is_association_type: Check if relation exists
- * param: int associationid
- * return: 1 if relation present
- * author: @SG
+/**
+ * @brief Check if relation exists
+ * @param associationid
+ * @return true if relation present, KW_FAIL : FAIL
+ * @author SG
  */
 int is_association_type(int associationid)
 {
@@ -783,10 +803,11 @@ int is_association_type(int associationid)
 
 /* --------------------- Others --------------------- */
 
-/* list_user_tags: List all tags in the system 
- * param: void
- * return: sqlite3_stmt *
- * author: @SG
+/**
+ * @brief List all tags in the system 
+ * @param void
+ * @return sqlite3_stmt pointer: SUCCESS, NULL : FAIL
+ * @author SG
  */
 sqlite3_stmt *list_user_tags(void)
 {
@@ -806,10 +827,11 @@ sqlite3_stmt *list_user_tags(void)
 	return stmt;
 }
 
-/* string_from_stmt: Returns data for multiple rows is query
- * param: sqlite3_stmt *stmt - statement holding query
- * return: const char* data returned by query
- * author: @SG 
+/**
+ * @brief Returns data for multiple rows in query
+ * @param stmt - statement holding query
+ * @return data returned by query : SUCCESS, NULL : FAIL
+ * @author SG 
  */
 const char* string_from_stmt(sqlite3_stmt *stmt)
 {
@@ -831,10 +853,11 @@ const char* string_from_stmt(sqlite3_stmt *stmt)
 
 /* -------------------- Fuse Functions --------------------- */
 
-/* istag: Check if given tag is present in system
- * param: char *t - tagname
- * return: 1 if tag present
- * author: @SG 
+/**
+ * @brief Check if given tag is present in system
+ * @param t - tagname
+ * @return true if tag present, KW_FAIL : FAIL
+ * @author SG 
  */
 bool istag(const char *t)
 {
@@ -859,10 +882,11 @@ bool istag(const char *t)
 	return KW_FAIL;
 }
 
-/* isfile: Check if given file is present in system
- * param: char *f - filename
- * return: 1 if file present
- * author: @SG
+/**
+ * @brief Check if given file is present in system
+ * @param f - filename
+ * @return true if file present, KW_FAIL : FAIL
+ * @author SG
  */
 bool isfile(const char *f)
 {
@@ -887,10 +911,11 @@ bool isfile(const char *f)
 	return KW_FAIL;
 }
 
-/* get_abspath_by_fname: return absolute path of file
- * param: char *path - kwest path
- * return: char * absolute path
- * author: @SG 
+/**
+ * @brief Return absolute path of file
+ * @param fname - file name
+ * @return absolute path : SUCCESS, NULL : FAIL
+ * @author SG 
  */
 char *get_abspath_by_fname(const char *fname)
 {
@@ -915,11 +940,12 @@ char *get_abspath_by_fname(const char *fname)
 	return NULL;
 }
 
-/* rename_file: rename file existing in kwest
- * param: char *from - existing name of file
- * param: char *to - new name of file
- * return: KW_SUCCESS, KW_ERROR, KW_FAIL
- * author: @SG 
+/**
+ * @brief Rename file existing in kwest
+ * @param from - existing name of file
+ * @param to - new name of file
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author SG 
  */
 int rename_file(const char *from, const char *to)
 {

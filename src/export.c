@@ -1,6 +1,11 @@
-/* export.h
- * ./export tag_name absolute_path
+/**
+ * @file export.c
+ * @brief export kwest path & files to external location
+ * @author Sahil Gupta
+ * @date December 2012
  */
+
+/* Execution : ./export tag_name absolute_path */
 
 /* LICENSE
  * Copyright 2013 Sahil Gupta
@@ -17,25 +22,27 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
+#include <string.h>
+#include <sqlite3.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
+
 #include "export.h"
-#include "dbbasic.h" /* Database Functions */
+#include "dbbasic.h"
 #include "dbinit.h"
-#include "dbkey.h"
-#include<stdio.h>
-#include<string.h>
-#include<dirent.h>
-#include<sys/stat.h>
-#include<errno.h>
-#include<fcntl.h>
-#include<sys/sendfile.h>
-#include<sqlite3.h>
 #include "flags.h"
 
-/* send_file_fun : copies file from source to destination
- * param: char *source - source of file
- * param: char *destination - path where file is to be copied
- * return: 1 on SUCCESS
- * author: @SG
+
+/**
+ * @brief Copies file from source to destination
+ * @param source - source of file
+ * @param destination - path where file is to be copied
+ * @return KW_SUCCESS : SUCCESS, KW_FAIL : FAIL
+ * @author SG
  */
 static int send_file(const char *source,const char *destination)
 {
@@ -68,7 +75,7 @@ static int send_file(const char *source,const char *destination)
 		printf("Cannot open destination file : %s", dst);
 		return KW_FAIL;
 	}
-
+	
 	/* Blast the bytes from one file to the other */
 	if(sendfile(write_dst, read_src, &offset, stat_buf.st_size) == -1){
 		return KW_FAIL; 
@@ -81,11 +88,12 @@ static int send_file(const char *source,const char *destination)
 	return KW_SUCCESS;
 }
 
-/* export: Exports a tag in kwest as Directory-file structure on FS
- * param: char *tag - Tag name in Kwest
- * param: char *path - Absolute Path of Location where tag is to be exported
- * return: KW_SUCCESS on SUCCESS
- * author: @SG
+/**
+ * @brief Exports a tag in kwest as Directory-file structure on File System
+ * @param tag - Tag name in Kwest
+ * @param path - Absolute Path of Location where tag is to be exported
+ * @return KW_SUCCESS : SUCCESS, KW_FAIL : FAIL
+ * @author SG
  */
 int export(const char *tag,const char *path)
 {
@@ -93,7 +101,7 @@ int export(const char *tag,const char *path)
 	const char *filename,*tagname,*filepath;
 	char tagpath[_POSIX_PATH_MAX];
 	void *ptr;
-
+	
 	/* Check if path is valid */
 	if((directory = opendir(path)) == NULL) {
 		printf("Error opening path");
@@ -102,18 +110,18 @@ int export(const char *tag,const char *path)
 	if(closedir(directory) != 0){
 		printf("Error closing path");
 	}
-
+	
 	/* Form path for creating Directory */
 	strcpy(tagpath,path);
 	strcat(strcat(tagpath,"/"),tag);
-
+	
 	/* Create Directory for tag */ 
 	printf("Creating Dir : %s",tag);
 	if(mkdir(tagpath, KW_STDIR) == -1 && errno != EEXIST) {
 		printf("Error Creating Directory");
 		return KW_FAIL;
 	} 
-
+	
 	/* Copy Files in Directory */
 	ptr = get_fname_under_tag(tag); /* Get Path */
 	while((filename = string_from_stmt(ptr))!= NULL) {
@@ -124,27 +132,36 @@ int export(const char *tag,const char *path)
 			printf("Copy File : %s",filename);
 		}
 	}
-
+	
 	/* Copy Sub-Directories */
 	ptr = get_tags_by_association(tag,ASSOC_SUBGROUP); /* Get Tag */
 	while((tagname = string_from_stmt(ptr))!= NULL) {
 		/* Copy Sub-Directory contents */
 		export(tagname,tagpath); 
 	}
-
+	
 	return KW_SUCCESS;
 } 
 
+/**
+ * @brief Main function
+ * @param argc
+ * @param argv - [1]Tag name in Kwest, [2]Absolute Path where tag is exported
+ * @return KW_SUCCESS : SUCCESS, KW_FAIL : FAIL
+ * @author SG
+ */
 int main(int argc,const char *argv[])
 {
-	if(argc<3) return -1;
-
-	if(export(argv[1],argv[2]) == KW_SUCCESS){
+	if(argc < 3) {
+		return KW_FAIL;
+	}
+	
+	if(export(argv[1],argv[2]) == KW_SUCCESS) {
 		printf("Tag Exported");
 		close_db();
 		return KW_SUCCESS;
 	}
-
+	
 	printf("Operation Failed");
 	close_db(); 
 	return KW_FAIL;

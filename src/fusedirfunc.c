@@ -1,7 +1,10 @@
-/* fusedirfunc.c
- * fuse directory related operations
+/**
+ * @file fusedirfunc.c
+ * @brief fuse directory related operations
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Harshvardhan Pandit
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,14 +21,14 @@
  */
 
 
-/* kwest_mkdir
- * make directory
- *  
- * @param const char *path
- * @param mode_t mode: mode of directory
+/**
+ * @brief make directory
+ * @param path
+ * @param mode: mode of directory
  * @return 0: SUCCESS, -errno: error
- * @author @HP
- */  int kwest_mkdir(const char *path, mode_t mode)
+ * @author HP
+ */  
+int kwest_mkdir(const char *path, mode_t mode)
 {
 	log_msg("mkdir: %s",path);
 
@@ -37,14 +40,13 @@
 }
 
 
-/* kwest_rmdir
- * remove given directory
- *  
- * @param const char *path
+/**
+ * @brief remove given directory
+ * @param path
  * @return 0: SUCCESS, -errno: error
- * @author @HP
+ * @author HP
  */
-  int kwest_rmdir(const char *path)
+int kwest_rmdir(const char *path)
 {
 	log_msg("rmdir: %s",path);
 	
@@ -55,4 +57,3 @@
 	
 	return remove_directory(path);
 }
-

@@ -1,5 +1,9 @@
-/* magicstrings.h
- * magic strings (!!!)
+/**
+ * @file magicstrings.h
+ * @brief Magic Strings used by KWEST programs
+ * @author Harshvardhan Pandit
+ * @author Sahil Gupta
+ * @date December 2012
  */
 
 /* LICENSE
@@ -21,38 +25,39 @@
 #ifndef KWEST_MAGICSTRINGS_H
 #define KWEST_MAGICSTRINGS_H
 
-
-
-
-#define ERR_TAG_EXISTS "Tag Exists : "
-#define ERR_TAG_NOT_FOUND "Tag Not Found : "
-#define ERR_FILE_EXISTS "File Exists : "
-#define ERR_FILE_NOT_FOUND "File Not Found : "
-#define ERR_REL_NOT_DEF "Relation Not Defined : "
-#define ERR_INF_EXISTS "Information Exists : "
-#define ERR_ADDING_FILE "Error adding file : "
-#define ERR_ADDING_META "Error adding Metadata for file : "
-#define ERR_ADDING_TAG "Error adding tag : "
-#define ERR_REMV_FILE "Error removing file : "
-#define ERR_REMV_TAG "Error removing tag : "
-#define ERR_PREP_QUERY "Error Preparing query"
-#define ERR_RENAMING_FILE "Error renaming file : "
-
-#define ERR_DB_CONN "Database Connection Failed"
-#define ERR_DB_CLOSE "Error Closing Database"
-
+/* STRINGS RELATED TO FILE STORAGE LOCATION */
 #define CONFIG_LOCATION "/.config/kwest/"
 #define DATABASE_NAME "kwest.db"
 
 #define LOGFILE_STORAGE "logfile.log"
 
+/* STRINGS RELATED TO DATABASE OPERATIONS */
+#define ERR_DB_CONN "Database Connection Failed"
+#define SUC_DB_CLOSE "Success Closing Database"
+#define ERR_DB_CLOSE "Error Closing Database"
 
+#define ERR_TAG_EXISTS "Tag Exists : "
+#define ERR_TAG_NOT_FOUND "Tag Not Found : "
+#define ERR_ADDING_TAG "Error adding tag : "
+#define ERR_REMV_TAG "Error removing tag : "
+#define ERR_FILE_EXISTS "File Exists : "
+#define ERR_FILE_NOT_FOUND "File Not Found : "
+#define ERR_ADDING_FILE "Error adding file : "
+#define ERR_REMV_FILE "Error removing file : "
+#define ERR_ADDING_META "Error adding Metadata for file : "
+#define ERR_RENAMING_FILE "Error renaming file : "
+#define ERR_INF_EXISTS "Information Exists : "
+#define ERR_REL_NOT_DEF "Relation Not Defined : "
+#define ERR_PREP_QUERY "Error Preparing query"
+
+/* Association Types */
 #define ASSOC_SYSTEM "system"
 #define ASSOC_PROBAB "probably_related"
 #define ASSOC_SUBGRP "subgroup"
 #define ASSOC_RELATD "related"
 #define ASSOC_NOTREL "not_related"
 
+/* SYSTEM TAGS */
 #define TAG_ROOT "Root"
 #define TAG_FILES "Files"
 

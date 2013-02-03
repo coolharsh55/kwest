@@ -1,7 +1,10 @@
-/* import.c
- * import files into kwest
+/**
+ * @file import.c
+ * @brief import files into kwest
+ * @author Sahil Gupta
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Sahil Gupta
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,30 +20,27 @@
  * limitations under the License.
  */
  
-/* Database Functions Required:
- * int add_tag(char *tagname,int tagtype)
- * int add_file(char *abspath)
- * int tag_file(char *t,char *f)
- * int add_association(char *t1,char *t2,int associationid)
- */
- 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/stat.h> /* stat structure */
-#include <dirent.h>   /* DIR */
-#include <sqlite3.h>  /* SQLITE Functions */
-
-#include "dbbasic.h" /* Kwest Datadase Functions */
-#include "extract_audio_taglib.h" /* Extract Audio Metadata */ 
+#include <sqlite3.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include "import.h"
+#include "dbbasic.h"
+#include "extract_audio_taglib.h"
+#include "logging.h"
 #include "flags.h"
 #include "magicstrings.h"
-#include "logging.h"
 
-/* import_semantics
- * import files and directories into kwest
+
+/**
+ * @brief import files and directories into kwest
+ * @param path
+ * @param dirname
+ * @return KW_SUCCESS : SUCCESS, KW_FAIL : FAIL
+ * @author SG
  */
 static int import_semantics(const char *path,const char *dirname)
 {
@@ -50,7 +50,7 @@ static int import_semantics(const char *path,const char *dirname)
 	struct stat fstat;
 	size_t path_len = strlen(path);
 	size_t dir_len;
-
+	
 	log_msg("import semantics: %s into %s", path, dirname);
 	 
 	if (directory == NULL) {
@@ -58,7 +58,7 @@ static int import_semantics(const char *path,const char *dirname)
 		perror ("Couldn't open the directory");
 		return KW_FAIL;
 	}
-
+	
 	while ((entry = readdir(directory))) {
 		dir_len = strlen(entry->d_name);
 		
@@ -76,47 +76,50 @@ static int import_semantics(const char *path,const char *dirname)
 		if((strchr(entry->d_name,'.')-entry->d_name) == 0){
 			continue;
 		}
-
+		
 		/* Ignore files ending with ~ */
 		if((strrchr(entry->d_name,'~')-entry->d_name) == dir_len-1){
 			continue;
 		}
-
+		
 		/* Get File Infromation : Returns 0 if successful */
 		if (stat(full_name, &fstat) < 0){
 			continue;
 		}
-
+		
 		if (S_ISDIR(fstat.st_mode)) { /* Directory */
-
+			
 			if(add_tag(entry->d_name,USER_TAG) == KW_SUCCESS){
-				printf("Created Tag : %s",entry->d_name);
+				printf("Created Tag : %s\n",entry->d_name);
 			}
-
+			
 			/* Access Sub-Directories */
 			import_semantics(full_name,entry->d_name);
-
+			
 			/* Tag-Tag Relation */
 			add_association(entry->d_name,dirname,
 			                ASSOC_SUBGROUP);
-
+			
 		} else if(S_ISREG(fstat.st_mode)) { /* Regular File */
-
+			
 			if(add_file(full_name) == KW_SUCCESS){
 				printf("Added File  : %s\n",entry->d_name);
-
+				
 				/* Tag-File Relation */
 				tag_file(dirname,entry->d_name);
 			}
 		}
 	}
-
+	
 	closedir (directory);
 	return KW_SUCCESS;
 }
 
-/* import
- * Import Directory-File structure from File System to Kwest
+/**
+ * @brief Import Directory-File structure from File System to Kwest
+ * @param path - absolute path of directory to be imported
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: ERROR
+ * @author SG
  */
 int import(const char *path)
 {
@@ -130,11 +133,11 @@ int import(const char *path)
 		printf("Creating Tag : %s\n",dirname);
 		add_association(dirname, TAG_FILES, ASSOC_SUBGROUP);
 	}
-
+	
 	if (import_semantics(path, dirname) == KW_SUCCESS) {
 		return KW_SUCCESS;
 	}
-
+	
 	printf("Operation Failed");
 	return KW_FAIL;
 }

@@ -1,5 +1,8 @@
-/* audio.h
- * metadata and relations associated with audio metadata
+/**
+ * @file extract_metadata.h
+ * @brief Rules associated with file type 
+ * @author Sahil Gupta
+ * @date December 2012
  */
 
 /* LICENSE
@@ -31,6 +34,9 @@
 	};
 #endif
 
+/*
+ * Rules for Audio files 
+ */
 int audio_metadata(void);
 
 #endif

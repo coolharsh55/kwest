@@ -1,7 +1,10 @@
-/* kwest_main.c
- * main function
+/**
+ * @file kwest_main.c
+ * @brief main function
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Harshvardhan Pandit
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,25 +20,25 @@
  * limitations under the License.
  */
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <pwd.h>
 #include <string.h>
+#include <pwd.h>
 #include <unistd.h>
-#include "import.h"
+
 #include "fusefunc.h"
-/* #include "db_consistency.h" */
-#include "logging.h"
-#include "flags.h"
 #include "dbinit.h"
 #include "import.h"
 #include "extract_metadata.h"
+/* #include "db_consistency.h" */
+#include "logging.h"
+#include "flags.h"
 #include "magicstrings.h"
 
 
-/* kwest main function
+/**
+ * @brief kwest main function
+ * @author HP
  */
 int main(int argc, char *argv[])
 {
@@ -51,14 +54,13 @@ int main(int argc, char *argv[])
 	strcat(logdir, CONFIG_LOCATION);
 	strcat(logdir, LOGFILE_STORAGE);
 	
-	stderror = freopen(logdir, "w", stderr); 
-	if(stderror == NULL) { /* redirect stderr to logfile */
-		printf("could not redirect stderror\n");
-	}
-	
 	printf("KWEST - A Semantically Tagged Virtual File System\n");
 	printf("Initiating logging file(s).........\n");
 	if(log_init() == KW_SUCCESS) {
+		stderror = freopen(logdir, "w", stderr); 
+		if(stderror == NULL) { /* redirect stderr to logfile */
+			printf("could not redirect stderror\n");
+		}
 		log_msg("KWEST - A Semantically Tagged Virtual File System");
 		log_msg("program initiated");
 		printf("SUCCESS!\n");

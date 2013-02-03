@@ -1,10 +1,12 @@
-/* dbfuse.c
- * functions connecting fuse and database modules
+/**
+ * @file dbfuse.c
+ * @brief functions connecting fuse and database modules
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
 
 /* LICENSE
  * Copyright 2013 Harshvardhan Pandit
- * Copyright 2013 Sahil Gupta
  * Licensed under the Apache License, Version 2.0 (the "License");
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,19 +20,21 @@
  * limitations under the License.
  */
 
-#include "dbfuse.h"
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 
-#include "flags.h"
+#include "dbfuse.h"
 #include "dbbasic.h"
 #include "logging.h"
-
-#include <string.h>
-#include <sys/stat.h>
-#include <stdlib.h>
+#include "flags.h"
 
 
-/* log_init
- * initialize logging
+/**
+ * @brief checks whether given path is ROOT
+ * @param path
+ * @return true if _is_root else false
+ * @author HP
  */
 bool _is_path_root(const char *path) 
 {
@@ -42,18 +46,22 @@ bool _is_path_root(const char *path)
 	}
 }
 
-
-/* get_entry_name
- * get last filename/tagname from path
+/**
+ * @brief get last filename/tagname from path
+ * @param path
+ * @return entry_name
+ * @author HP
  */
 static const char *get_entry_name(const char *path)
 {
 	return (strrchr(path, '/') + 1);
 }
 
-
-/* check_association
- * check if association exists between consecutive tags in path
+/**
+ * @brief Check if association exists between consecutive tags in path
+ * @param path
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL
+ * @author SG
  */
 static int check_association(const char *path)
 {
@@ -83,9 +91,11 @@ static int check_association(const char *path)
 	return KW_SUCCESS;
 }
 
-
-/* check_path_validity
- * checks whether current path is valid in database
+/**
+ * @brief checks whether current path is valid in database
+ * @param path
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author HP SG
  */
 int check_path_validity(const char *path)
 {
@@ -122,9 +132,11 @@ int check_path_validity(const char *path)
 	return KW_FAIL;
 }
 
-
-/* path_is_dir
- * checks whether given path has a directory entry
+/**
+ * @brief checks whether given path has a directory entry
+ * @param path
+ * @return true if _is_dir else false
+ * @author HP
  */
 bool path_is_dir(const char *path)
 {
@@ -133,9 +145,11 @@ bool path_is_dir(const char *path)
 	return true;
 }
 
-
-/* path_is_file
- * checks whether given path has a file entry
+/**
+ * @brief checks whether given path has a file entry
+ * @param path
+ * @return true if _is_file else false
+ * @author HP
  */
 bool path_is_file(const char *path)
 {
@@ -146,22 +160,27 @@ bool path_is_file(const char *path)
 	return true;
 }
 
-
-/* get_absolute_path
- * returns absolute path of said file
+/**
+ * @brief returns absolute path of said file
+ * @param path
+ * @return const char * as file absolute path
+ * @author HP
  */
 const char *get_absolute_path(const char *path)
 {
 	return get_abspath_by_fname(get_entry_name(path));
 }
 
-
-/* readdir_dirs
- * get directory entries for said path
+/**
+ * @brief get directory entries for said path
+ * @param path
+ * @param ptr
+ * @return char * as directory entry
+ * @author HP
  */
 char *readdir_dirs(const char *path, void **ptr)
 {
-	log_msg ("readdir_dirs: %s\n",path);
+	log_msg ("readdir_dirs: %s",path);
 	if(*ptr == NULL) {
 		if(*(path + 1) == '\0') {
 			*ptr=get_tags_by_association(TAG_ROOT, ASSOC_SUBGROUP);
@@ -170,7 +189,6 @@ char *readdir_dirs(const char *path, void **ptr)
 			*ptr = get_tags_by_association(t + 1, ASSOC_SUBGROUP); 
 		}
 		if(*ptr == NULL) {
-			log_msg("pointer p is NULL\n");
 			return NULL;
 		}
 	}
@@ -178,13 +196,16 @@ char *readdir_dirs(const char *path, void **ptr)
 	return (char *)string_from_stmt(*ptr);
 }
 
-
-/* readdir_files
- * get file entries for said path
+/**
+ * @brief get file entries for said path
+ * @param path
+ * @param ptr
+ * @return char * as file entry
+ * @author HP
  */
 char *readdir_files(const char *path, void **ptr)
 {
-	log_msg ("readdir_files: %s\n",path);
+	log_msg ("readdir_files: %s",path);
 	if(*ptr == NULL) {
 		if(*(path + 1) == '\0') {
 			*ptr = get_fname_under_tag(TAG_ROOT);
@@ -200,27 +221,34 @@ char *readdir_files(const char *path, void **ptr)
 	return (char *)string_from_stmt(*ptr);
 }
 
-
-/* get_newfile_path
- * create a new file and return is absolute path
+/**
+ * @brief create a new file and return is absolute path
+ * @param path
+ * @return const char * as absolute path
+ * @author HP
  */
 const char *get_newfile_path(const char *path)
 {
 	return NULL;
 }
 
-
-/* rename_file
- * rename the said file from -> to
+/**
+ * @brief rename the said file from -> to
+ * @param from - source file name
+ * @param to - destination file name
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author HP
  */
 int rename_this_file(const char *from, const char *to)
 {
 	return rename_file(from,to);
 }
 
-
-/* remove_file
- * remove the said file
+/**
+ * @brief remove the said file
+ * @param path
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author HP SG
  */
 int remove_this_file(const char *path)
 {
@@ -230,6 +258,7 @@ int remove_this_file(const char *path)
 	char *tagname = NULL;
 	char *t2 = NULL;
 	
+	log_msg ("remove_this_file: %s",path);
 	while(*tptr != '/') tptr--; /* seperat directory name */
 	tptr++;
 	
@@ -241,24 +270,23 @@ int remove_this_file(const char *path)
 	}
 	*t2 = '\0';
 	
-	log_msg ("remove_this_file: %s",path);
-	log_msg ("filename: %s",filename);
-	log_msg("tagname: %s", tagname);
-	
 	if(untag_file(tagname, filename) == KW_SUCCESS) {
-		log_msg("untag file successful");
+		log_msg("remove_this_file: untag file successful");
 		free(tagname);
 		return KW_SUCCESS;
 	}
 	free(tagname);
-	log_msg("untag file has failed");
+	log_msg("remove_this_file: untag file failed");
 	
 	return KW_FAIL;
 }
 
-
-/* make_directory
- * create a new directory
+/**
+ * @brief create a new directory
+ * @param path
+ * @param mode
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author HP SG
  */
 int make_directory(const char *path, mode_t mode)
 {
@@ -288,7 +316,7 @@ int make_directory(const char *path, mode_t mode)
 	*t2 = '\0';
 	
 	if(add_association(newtag, parenttag, ASSOC_SUBGROUP) != KW_SUCCESS) {
-		log_msg ("make_directory: failed to add association ");
+		log_msg ("make_directory: failed to add association");
 		return KW_FAIL;
 	}
 	
@@ -296,9 +324,11 @@ int make_directory(const char *path, mode_t mode)
 	return KW_SUCCESS;
 }
 
-
-/* remove_directory
- * remove directory
+/**
+ * @brief remove directory
+ * @param path
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL
+ * @author HP
  */
 int remove_directory(const char *path)
 {

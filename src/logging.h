@@ -1,5 +1,8 @@
-/* logging.h
- * functions for logging filesystem operations
+/**
+ * @file logging.h
+ * @brief functions for logging filesystem operations
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
 
 /* LICENSE
@@ -17,40 +20,25 @@
  * limitations under the License.
  */
  
- #ifndef KWEST_LOGGING_H
- #define KWEST_LOGGING_H
+#ifndef KWEST_LOGGING_H
+#define KWEST_LOGGING_H
 
 #include <stdio.h>
 
 
-/* log_init
+/*
  * initialize logging
- * 
- * @param none
- * @return KW_SUCCESS on success, KW_FAIL on fail
- * @author @HP
  */
 int log_init(void);
 
-
-/* log_msg
+/*
  * print log message to logfile
- * 
- * @param none
- * @return none
- * @author @HP
  */
 void log_msg(const char *msg, ...);
 
-
-/* log_close
+/*
  * close the logfile
- * 
- * @param none
- * @return none
- * @author @HP
  */
 int log_close(void);
 
-
- #endif
+#endif

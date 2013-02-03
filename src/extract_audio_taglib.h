@@ -1,7 +1,10 @@
-/* extract_audio_taglib.h
- * extract audio metadata using taglib
+/**
+ * @file extract_audio_taglib.h
+ * @brief extract audio metadata using taglib
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Harshvardhan pandit
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +23,9 @@
 #ifndef EXTRACT_AUDIO_TAGLIB_H_INCLUDED
 #define EXTRACT_AUDIO_TAGLIB_H_INCLUDED
 
-#include <taglib/tag_c.h>
 #include <stdio.h>
+#include <taglib/tag_c.h>
+
 
 struct metadata_audio {
 	const char *title;
@@ -39,29 +43,31 @@ struct metadata_audio {
 	};
 #endif
 
-/* extract_metadata_file: extract from physical location
- * param: const char* path - path of file
- * return: 0 SUCCESS, 1 NA, -1 ERROR
- * author: @HP
- * */
+/*
+ * Generalize metadata fields
+ */
+struct metadata audio_fields(void);
+
+/*
+ * Extract from physical location
+ */
 TagLib_File *extract_metadata_file(const char* path, 
                                    struct metadata_audio *M);
 
 
-/* extract_metadata_fileid: extract from fileid
- * param: int file_id - file_id from database
- * return: 0 SUCCESS, 1 NA, -1 ERROR
- * author: @HP
- * */
+/*
+ * Extract from fileid
+ */
 int extract_metadata_fileid(int file_id);
 
-/* is_audio: check if filetype = audio
- * param: const char* path - path of file
- * return: 0 AUDIO, 1 NO, -1 ERROR
- * author: @HP
- * */
+/*
+ * Check if filetype = audio
+ */
 int is_audio(const char* path);
 
+/*
+ * Clear strings
+ */
 void extract_clear_strings(TagLib_File* file);
 
 #endif

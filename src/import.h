@@ -1,5 +1,8 @@
-/* import.h
- * import files into kwest
+/**
+ * @file import.h
+ * @brief import files into kwest
+ * @author Sahil Gupta
+ * @date December 2012
  */
 
 /* LICENSE
@@ -21,14 +24,8 @@
 #define IMPORT_H_INCLUDED
 
 
-
-/* import
+/*
  * Import Directory-File structure from File System to Kwest
- * 
- * @param const char *path
- * @return 1: SUCCESS, KW_FAIL: ERROR
- * @author @SG
- * 
  */
 int import(const char *path);
 

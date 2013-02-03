@@ -1,7 +1,10 @@
-/* dbkey.h
- * handle requests for files and tags
+/**
+ * @file dbkey.h
+ * @brief handle requests for files and tags
+ * @author Sahil Gupta
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Sahil Gupta
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,45 +23,34 @@
 #ifndef DBKEY_H_INCLUDED
 #define DBKEY_H_INCLUDED
 
-/* set_file_id: Generate id for new file to be added in kwest
- * param: char *abspath - Absolute Path of File
- * return: int fno
- * author: @SG 
+
+/*
+ * Generate id for new file to be added in kwest
  */
 int set_file_id(const char *abspath);
 
-/* set_tag_id: Generate id for new tag to be created in kwest
- * param: char *tagname
- * return: int tno 
- * author: @SG 
+/*
+ * Generate id for new tag to be created in kwest
  */
 int set_tag_id(const char *tagname,int tagtype);
 
-/* get_file_id: return id for file in kwest
- * param: char *abspath - Absolute Path of File
- * return: int fno 
- * author: @SG 
+/*
+ * Return id for file in kwest
  */
 int get_file_id(const char *abspath);
 
-/* get_tag_id: return id for a tag in kwest
- * param: char *tagname
- * return: int tno 
- * author: @SG 
+/*
+ * Return id for tag in kwest
  */
 int get_tag_id(const char *tagname);
 
-/* get_file_name: Retrieve filename by its id
- * param: int fno - file number
- * return: char *filename
- * author: @SG 
+/*
+ * Retrieve filename by its id
  */
 const char *get_file_name(int fno);
 
-/* get_tag_name: Retrieve tag name by its id
- * param: int tno - tag number
- * return: char *tagname
- * author: @SG 
+/*
+ * Retrieve tag name by its id
  */
 const char *get_tag_name(int tno);
 

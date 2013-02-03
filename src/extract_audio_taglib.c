@@ -1,7 +1,10 @@
-/* extract_audio_taglib.c
- * extract audio metadata using taglib
+/**
+ * @file extract_audio_taglib.c
+ * @brief extract audio metadata using taglib
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
-
+ 
 /* LICENSE
  * Copyright 2013 Harshvardhan Pandit
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,15 +20,21 @@
  * limitations under the License.
 */
 
-#include "extract_audio_taglib.h"
-#include "magicstrings.h"
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
-/* metadata_audio_fields
+#include "extract_audio_taglib.h"
+#include "magicstrings.h"
+
+
+/**
+ * @brief Generalize metadata fields
+ * @param void
+ * @return structure metadata
+ * @author HP
  */
-struct metadata audio_fields()
+struct metadata audio_fields(void)
 {
 	struct metadata M;
 	/* int i; */
@@ -55,9 +64,11 @@ struct metadata audio_fields()
 	return M;
 }
 
-/* format_string 
- * convert string to Title Case and trim Whitespaces
- * author : @RS @SG
+/**
+ * @brief convert string to Title Case and trim Whitespaces
+ * @param string - Unformatted string
+ * @return string - Formatted string
+ * @author @RS SG
  */
 static char *format_string(char *string)
 {
@@ -81,11 +92,13 @@ static char *format_string(char *string)
 	return string;
 }
 
-/* extract_metadata_file: extract from physical location
- * param: const char* path - path of file
- * return: 0 SUCCESS, 1 NA, -1 ERROR
- * author: @HP
- * */
+/**
+ * @brief Extract from physical location
+ * @param path - path of file
+ * @param M - Structure for audio metadata
+ * @return 0 SUCCESS, 1 NA, -1 ERROR
+ * @author HP
+ */
 TagLib_File *extract_metadata_file(const char* path, struct metadata_audio *M)
 {
 	TagLib_File* file = taglib_file_new(path); 
@@ -109,11 +122,12 @@ TagLib_File *extract_metadata_file(const char* path, struct metadata_audio *M)
 	return file;
 }
 
-/* is_audio: check if filetype = audio
- * param: const char* path - path of file
- * return: 0 AUDIO, 1 NO, -1 ERROR
- * author: @HP
- * */
+/**
+ * @brief Check if filetype = audio
+ * @param path - path of file
+ * @return 0 AUDIO, 1 NO, -1 ERROR
+ * @author HP
+ */
 int is_audio(const char* path)
 {
 	TagLib_File* file = NULL;
@@ -131,9 +145,14 @@ int is_audio(const char* path)
 	}
 }
 
+/**
+ * @brief Check if filetype = audio
+ * @param file - TagLib file pointer
+ * @return void
+ * @author HP
+ */
 void extract_clear_strings(TagLib_File* file)
 {
 	taglib_tag_free_strings();
 	taglib_file_free(file);
-	return;
 }

@@ -1,5 +1,8 @@
-/* fusefunc.c
- * fuse functions implementations
+/**
+ * @file fusefunc.c
+ * @brief fuse functions implementations
+ * @author Harshvardhan Pandit
+ * @date December 2012
  */
 
 /* LICENSE
@@ -19,30 +22,28 @@
  
 #define FUSE_USE_VERSION 26
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fuse.h>
+
 #include "fusefunc.h"
 #include "dbfuse.h"
 #include "dbinit.h"
 #include "logging.h"
 #include "flags.h"
-
-#include <fuse.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
 #include "fusefilefunc.c"
 #include "fusedirfunc.c"
 
 
-/* kwest_getattr
- * get attributes for corresponding entry
- * 
- * @param const char *path
- * @param struct stat *stbuf: stat buffer pointer
+/**
+ * @brief get attributes for corresponding entry
+ * @param path
+ * @param stbuf: stat buffer pointer
  * @return 0: SUCCESS, -ENOENT: no_entry, -EIO: IOerror, -EACCES: no_acces
- * @author @HP 
+ * @author HP 
  */
 static int kwest_getattr(const char *path, struct stat *stbuf)
 {
@@ -86,16 +87,15 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	return -EACCES;
 }
 
-/* kwest_readdir
- * list sub-directories and files
- *  
- * @param const char *path
- * @param void *buf: buffer to store directory entries
- * @param fuse_fill_dir_t filler: function to fill buffer with entry
- * @param off_t offset: offset for last entry
- * @param struct fuse_file_info *fi: fuse struct for file info
+/**
+ * @brief list sub-directories and files
+ * @param path
+ * @param buf: buffer to store directory entries
+ * @param filler: function to fill buffer with entry
+ * @param offset: offset for last entry
+ * @param fi: fuse struct for file info
  * @return 0: SUCCESS, -ENOENT: no_entry, -EIO: IOerror, -EACCES: no_acces
- * @author @HP 
+ * @author HP 
  */
 static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi)
@@ -133,12 +133,12 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 
-/* kwest_access
- * checks if access is valid
- * 
- * @param const char *path
- * @param int mask
+/**
+ * @brief checks if access is valid
+ * @param path
+ * @param mask
  * @return 0: SUCCESS, -ENOENT: no_entry, -EIO: IOerror, -EACCES: no_acces
+ * @author HP
  */
 static int kwest_access(const char *path, int mask)
 {
@@ -168,11 +168,17 @@ static int kwest_access(const char *path, int mask)
 		log_msg("ERROR ACCESSING FILE");
 		return -errno;
 	}
-
+	
 	return 0;
 }
 
 
+/**
+ * @brief operations performed while unmount
+ * @param private_data
+ * @return void
+ * @author HP
+ */
 void kwest_destroy(void *private_data)
 {
 	log_msg("filesytem is being unmounted...");
@@ -183,19 +189,18 @@ void kwest_destroy(void *private_data)
 
 /* __FUSE FILESYSTEM OPERATIONS STRUCTURE__ */
 
-/* kwest_oper
- * fuse operations as functions
- * 
- * NOTE: commented out part is not implemented
+/**
+ * @brief fuse operations as functions
+ * @note commented out part is not implemented
  */
 static struct fuse_operations kwest_oper = {
 /* BASIC FILESYSTEM OPERATIONS */ 
-	.getattr = kwest_getattr,
-	.readdir = kwest_readdir,
-	.access = kwest_access,
-	.truncate = kwest_truncate, 
-	.destroy = kwest_destroy,
-	
+	.getattr	 = kwest_getattr,
+	.readdir	 = kwest_readdir,
+	.access		 = kwest_access,
+	.truncate	 = kwest_truncate, 
+	.destroy	 = kwest_destroy,
+
 /* FILE RELATED FILESYSTEM OPERATIONS */
 	.open		= kwest_open,
 	.release	= kwest_release,
@@ -215,10 +220,10 @@ static struct fuse_operations kwest_oper = {
 /*	.symlink	= kwest_symlink, */
 /*	.readlink	= kwest_readlink, */
 /*	.link		= kwest_link, */
-	
 /*	.utimens	= kwest_utimens, */
 /*	.statfs		= kwest_statfs, */
 /*	.fsync		= kwest_fsync, */
+
 /*
 #ifdef HAVE_SETXATTR
 	.setxattr	= kwest_setxattr,
@@ -230,13 +235,12 @@ static struct fuse_operations kwest_oper = {
 };
 
 
-/* call_fuse_daemon
- * pass control to fuse daemon
- *  
- * @param int argc
- * @param int argv
+/**
+ * @brief pass control to fuse daemon
+ * @param argc
+ * @param argv
  * @return 0: SUCCESS, -errno: error
- * @author @HP
+ * @author HP
  */ 
 int call_fuse_daemon(int argc, char **argv)
 {
