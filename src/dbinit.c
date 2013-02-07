@@ -85,11 +85,11 @@ int create_db(void)
 	int status;
 
 	strcpy(query,"create table if not exists FileDetails "
-	"(fno integer primary key,fname varchar2(50),abspath varchar2(100));");
+	"(fno integer primary key,fname text,abspath text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	strcpy(query,"create table if not exists TagDetails "
-	"(tno integer primary key,tagname varchar2(50));");
+	"(tno integer primary key,tagname text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	strcpy(query,"create table if not exists FileAssociation "
@@ -101,16 +101,15 @@ int create_db(void)
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	strcpy(query,"create table if not exists MetaInfo "
-	"(filetype varchar2(20),tag varchar2(20));");
+	"(filetype text,tag text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	strcpy(query,"create table if not exists Audio "
-	"(fno integer,title varchar2(75),artist varchar2(75),"
-	"album varchar2(75),genre varchar2(75));");
+	"(fno integer,title text,artist text,album text,genre text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	strcpy(query,"create table if not exists Associations "
-	"(associationid integer primary key,associationtype varchar2(20));");
+	"(associationid integer primary key,associationtype text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	/* Possible Tag-Tag Relations */

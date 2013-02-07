@@ -1,3 +1,6 @@
+**2013 Feb 07**
+corrected datatypes for database tables
+
 **2013 Feb 03**
 fixed bug : Trying to redirect stderror to file in a non-existent folder
 Commenting for Doxygen
