@@ -1,5 +1,5 @@
-kwest : kwest_main.o fusefunc.o dbfuse.o logging.o dbbasic.o dbinit.o dbkey.o extract_metadata.o extract_audio_taglib.o import.o
-	gcc -o kwest kwest_main.o fusefunc.o dbfuse.o logging.o dbbasic.o dbinit.o dbkey.o extract_metadata.o extract_audio_taglib.o import.o -lfuse -lsqlite3 -ltag_c
+kwest : kwest_main.o fusefunc.o dbfuse.o logging.o dbbasic.o dbinit.o dbkey.o extract_metadata.o extract_audio_taglib.o import.o dbconsistency.o
+	gcc -o kwest kwest_main.o fusefunc.o dbfuse.o logging.o dbbasic.o dbinit.o dbkey.o extract_metadata.o extract_audio_taglib.o import.o dbconsistency.o -lfuse -lsqlite3 -ltag_c
  
 kwest_main.o : kwest_main.c
 	gcc -c -Wall -std=gnu99 kwest_main.c -D_FILE_OFFSET_BITS=64 -lfuse
@@ -21,7 +21,8 @@ logging.o: logging.c
 	gcc -c -Wall -std=gnu99 logging.c
 dbfuse.o: dbfuse.c
 	gcc -c -Wall -std=gnu99 dbfuse.c 
-
+dbconsistency.o: dbconsistency.c
+	gcc -c -Wall -std=gnu99 dbconsistency.c -lsqlite3
 
 clean:
 	rm -rf *.o

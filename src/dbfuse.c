@@ -26,6 +26,7 @@
 
 #include "dbfuse.h"
 #include "dbbasic.h"
+#include "dbkey.h"
 #include "logging.h"
 #include "flags.h"
 
@@ -252,11 +253,11 @@ int rename_this_file(const char *from, const char *to)
  */
 int remove_this_file(const char *path)
 {
-	
 	char *filename = (char *)get_entry_name(path);
 	char *tptr = filename -2;
 	char *tagname = NULL;
 	char *t2 = NULL;
+	int fno;
 	
 	log_msg ("remove_this_file: %s",path);
 	while(*tptr != '/') tptr--; /* seperat directory name */
@@ -270,7 +271,8 @@ int remove_this_file(const char *path)
 	}
 	*t2 = '\0';
 	
-	if(untag_file(tagname, filename) == KW_SUCCESS) {
+	fno = get_file_id_by_tag(path);
+	if(untag_file(tagname, fno) == KW_SUCCESS) {
 		log_msg("remove_this_file: untag file successful");
 		free(tagname);
 		return KW_SUCCESS;

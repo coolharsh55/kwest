@@ -37,7 +37,17 @@ int set_tag_id(const char *tagname,int tagtype);
 /*
  * Return id for file in kwest
  */
-int get_file_id(const char *abspath);
+int get_file_id_by_abspath(const char *abspath);
+
+/*
+ * Return id for file in kwest
+ */
+int get_file_id_by_intersection(const char *path);
+
+/*
+ * Return id for file in kwest
+ */
+int get_file_id_by_tag(const char *path);
 
 /*
  * Return id for tag in kwest

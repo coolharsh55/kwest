@@ -30,7 +30,7 @@
 #include "dbinit.h"
 #include "import.h"
 #include "extract_metadata.h"
-/* #include "db_consistency.h" */
+#include "dbconsistency.h"
 #include "logging.h"
 #include "flags.h"
 #include "magicstrings.h"
@@ -74,6 +74,8 @@ int main(int argc, char *argv[])
 	create_db();
 	
 	audio_metadata();
+	
+	check_db_consistency();
 	
 	printf("Importing file from %s\n",musicdir);
 	if(import(musicdir) == KW_SUCCESS) {

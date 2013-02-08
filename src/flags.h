@@ -49,7 +49,7 @@
 
 /* Starting id for tags and files */
 #define NO_DB_ENTRY      0
-#define FILE_START       0
+#define FILE_START       1
 #define SYSTEM_TAG_START 0
 #define USER_TAG_START   100
 

@@ -39,13 +39,13 @@
 /*
  * Extract and add metadata for file in kwest
  */
-static int add_metadata_file(int fno,const char *abspath,char *fname);
+static int add_metadata_file(int fno,const char *abspath);
 
 /*
  * Form association for metadata in file
  */
 static void associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname);
+                            int fno);
 
 /* ---------------- ADD/REMOVE -------------------- */
 
@@ -135,10 +135,11 @@ int remove_tag(const char *tagname)
 /**
  * @brief Add file to kwest
  * @param abspath
+ * @param tagname
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG
  */
-int add_file(const char *abspath)
+int add_file(const char *abspath,const char *tagname)
 {
 	sqlite3_stmt *stmt;
 	char query[QUERY_SIZE];
@@ -147,12 +148,11 @@ int add_file(const char *abspath)
 	char *fname;
 	
 	fno = set_file_id(abspath); /* Call Function to set fno for File */
-	fname = strrchr(abspath,'/')+1;
-	
 	if(fno == KW_FAIL){ /* Return if File already Exists */
 		return KW_ERROR;
 	} 
 	
+	fname = strrchr(abspath,'/')+1;
 	/* Query : Insert (fno, fname, abspath) in FileDetails Table */
 	strcpy(query,"insert into FileDetails values(:fno,:fname,:abspath);");
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
@@ -170,7 +170,11 @@ int add_file(const char *abspath)
 	sqlite3_finalize(stmt);
 	
 	/* Get Metadata for file */
-	add_metadata_file(fno,abspath,fname);
+	add_metadata_file(fno,abspath);
+	
+	if(tag_file(tagname,fno) == KW_FAIL) {
+		remove_file(fno);
+	}
 	
 	if(status == SQLITE_DONE){
 		return KW_SUCCESS;
@@ -183,11 +187,10 @@ int add_file(const char *abspath)
  * @brief Extract and add metadata for file in kwest
  * @param int fno - file id 
  * @param abspath - absolute path
- * @param fname - file name
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG HP
  */
-static int add_metadata_file(int fno,const char *abspath,char *fname)
+static int add_metadata_file(int fno,const char *abspath)
 {
 	sqlite3_stmt *stmt;
 	char query[QUERY_SIZE];
@@ -229,11 +232,12 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	status = sqlite3_step(stmt);
 	
 	if(status == SQLITE_DONE){
-		associate_file_metadata(TAG_ARTIST,M.artist,fname);
-		associate_file_metadata(TAG_ALBUM,M.album,fname);
-		associate_file_metadata(TAG_GENRE,M.genre,fname);
+		associate_file_metadata(TAG_ARTIST,M.artist,fno);
+		associate_file_metadata(TAG_ALBUM,M.album,fno);
+		associate_file_metadata(TAG_GENRE,M.genre,fno);
 	} else { /* Handle if Error while Adding Metadata */
-		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,fname);
+		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,
+		        strrchr(abspath,'/')+1);
 		extract_clear_strings(meta);
 		sqlite3_finalize(stmt);
 		return KW_FAIL;
@@ -248,12 +252,12 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
  * @brief Form association for metadata in file
  * @param metatype - metadata category
  * @param tagname - metadata
- * @param fname - file name 
+ * @param fno - file id 
  * @return void
  * @author SG
  */
 static void associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname)
+                            int fno)
 {
 	char *newtag=NULL;
 	
@@ -267,7 +271,7 @@ static void associate_file_metadata(const char *metatype,const char *tagname,
 		/* Associate Tag Unknown with File Type*/
 		add_association(newtag,metatype,ASSOC_SUBGROUP);
 		/* Tag File to Metadata Tag */
-		tag_file(newtag,fname);
+		tag_file(newtag,fno);
 		free((char *)newtag);
 	} else { /* Metadata Exist */
 		/* Create Tag for Metadata */
@@ -275,28 +279,20 @@ static void associate_file_metadata(const char *metatype,const char *tagname,
 		/* Associate Metadata tag with File Type */
 		add_association(tagname,metatype,ASSOC_SUBGROUP);
 		/* Tag File to Metadata Tag */
-		tag_file(tagname,fname);
+		tag_file(tagname,fno);
 	}
 }
 
 /**
  * @brief Remove file form kwest 
- * @param fname - File name
+ * @param fno File id
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG 
  */
-int remove_file(const char *fname)
+int remove_file(int fno)
 {
 	char query[QUERY_SIZE];
 	int status;
-	int fno;
-	
-	fno = get_file_id(fname); /* Get File ID */
-	
-	if(fno == KW_FAIL){ /* Return if File does not Exists */
-		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,fname);
-		return KW_ERROR;
-	} 
 	
 	/* Remove File-Tag Associations */
 	sprintf(query,"delete from FileAssociation where fno = %d;",fno);
@@ -360,27 +356,21 @@ int add_meta_info(const char *filetype,const char *tag)
 /**
  * @brief Associate a tag with a file
  * @param t - tagname
- * @param f - filename
+ * @param fno - file id
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG
  */
-int tag_file(const char *t,const char *f)
+int tag_file(const char *t,int fno)
 {
 	sqlite3_stmt* stmt; 
 	char query[QUERY_SIZE];
 	int status;
-	int fno,tno;
-	
-	fno = get_file_id(f); /* Get File ID */
-	if(fno == KW_FAIL){ /* Return if File not found */
-		printf("tag_file : %s%s",ERR_FILE_NOT_FOUND,f);
-		return KW_ERROR;
-	}
+	int tno;
 	
 	tno = get_tag_id(t); /* Get Tag ID */
 	if(tno == KW_FAIL){ /* Return if Tag not found */
 		printf("tag_file : %s%s",ERR_TAG_NOT_FOUND,t);
-		return KW_ERROR;
+		return KW_FAIL;
 	}
 	
 	/* Query : check if entry exists in File Association Table */
@@ -416,24 +406,18 @@ int tag_file(const char *t,const char *f)
 /**
  * @brief Remove the existing association between the tag and file
  * @param t - tagname
- * @param f - filename
+ * @param fno File id
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG
  */
-int untag_file(const char *t,const char *f)
+int untag_file(const char *t,int fno)
 {
 	sqlite3_stmt *stmt;
 	char query[QUERY_SIZE];
 	int status;
-	int fno,tno;
+	int tno;
 	
-	log_msg("untag file: %s :: %s", t, f);
-	
-	fno = get_file_id(f); /* Get File ID */
-	if(fno == KW_FAIL){ /* Return if File not found */
-		log_msg("untag_file : %s%s",ERR_FILE_NOT_FOUND,f);
-		return KW_ERROR;
-	}
+	log_msg("untag file: %s", t);
 	
 	tno = get_tag_id(t); /* Get Tag ID */
 	if(tno == KW_FAIL){ /* Return if Tag not found */
@@ -461,7 +445,7 @@ int untag_file(const char *t,const char *f)
 	if(status == SQLITE_ROW) {
 		if(atoi((const char*)sqlite3_column_text(stmt,0)) == 0) { 
 			sqlite3_finalize(stmt);
-			status = remove_file(f);
+			status = remove_file(fno);
 			if(status == KW_SUCCESS){
 				log_msg("removing file from database");
 				return KW_SUCCESS;
@@ -507,24 +491,25 @@ sqlite3_stmt *get_fname_under_tag(const char *t)
 
 /**
  * @brief Return list of tags associated with a given file
- * @param f - filename
+ * @param path Kwest path containing tagname and filename
  * @return sqlite3_stmt pointer : SUCCESS, NULL : FAIL
  * @author SG 
  */
-sqlite3_stmt *get_tags_for_file(const char *f)
+sqlite3_stmt *get_tags_for_file(const char *path)
 {
 	sqlite3_stmt *stmt;
 	char query[QUERY_SIZE];
 	int status;
+	char *filename=strrchr(path,'/')+1;
 	int fno;
 	
-	fno = get_file_id(f); /* Get File ID */
+	fno = get_file_id_by_tag(filename); /* Get File ID */
 	if(fno == KW_FAIL){ /* Return if File not found */
-		printf("get_tags_for_file : %s%s",ERR_FILE_NOT_FOUND,f);
+		printf("get_tags_for_file : %s%s",ERR_FILE_NOT_FOUND,filename);
 		return NULL;
 	}
 	
-	/* Query to get all tags associated with file f */
+	/* Query to get all tags associated with file filename */
 	sprintf(query,"select tagname from TagDetails where tno in"
 	        "(select tno from FileAssociation where fno = %d);",fno);
 	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
@@ -956,7 +941,7 @@ int rename_file(const char *from, const char *to)
 	
 	log_msg("rename_file: %s :: %s", from, to);
 	
-	fno = get_file_id(from); /* Get File ID */
+	fno = get_file_id_by_tag(from); /* Get File ID */
 	
 	if(fno == KW_FAIL){ /* Return if File does not Exists */
 		log_msg("rename_file : %s%s",ERR_FILE_NOT_FOUND,from);

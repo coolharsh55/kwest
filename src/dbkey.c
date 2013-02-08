@@ -29,18 +29,19 @@
 #include "dbinit.h"
 #include "flags.h"
 
-
 /**
  * @brief Return count of entries in database
  * @param querystring 
  * @return count
  * @author SG
+ * @todo return id of deleted entry if available
  */
 static int get_field_count(const char *querystring)
 {
 	sqlite3_stmt *stmt = NULL;
 	char query[QUERY_SIZE];
 	int status;
+	char *tmp;
 	
 	/* Query to get field count */
 	strcpy(query, querystring);
@@ -48,6 +49,40 @@ static int get_field_count(const char *querystring)
 	
 	status = sqlite3_step(stmt);
 	if(status == SQLITE_ROW) { /* Return field count */
+		tmp = (const char*)sqlite3_column_text(stmt,0);
+		if(tmp == NULL){
+			sqlite3_finalize(stmt);
+			return NO_DB_ENTRY;
+		}
+		status = atoi(tmp);
+		sqlite3_finalize(stmt);
+		return status;
+	}
+	
+	sqlite3_finalize(stmt);
+	return KW_FAIL;
+}
+
+/**
+ * @brief Return id for specified field
+ * @param querystring 
+ * @param fieldname
+ * @return field_id
+ * @author SG HP
+ */
+static int get_field_id(const char *querystring, const char *fieldname)
+{
+	sqlite3_stmt *stmt = NULL;
+	char query[QUERY_SIZE];
+	int status;
+	
+	/* Query to get field_id */
+	strcpy(query, querystring);
+	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+	sqlite3_bind_text(stmt,1, fieldname,-1,SQLITE_STATIC);
+	
+	status = sqlite3_step(stmt);
+	if(status == SQLITE_ROW) { /* Return field_id if entry exists */
 		status = atoi((const char*)sqlite3_column_text(stmt,0));
 		sqlite3_finalize(stmt);
 		return status;
@@ -58,6 +93,33 @@ static int get_field_count(const char *querystring)
 }
 
 /**
+ * @brief Retrieve fieldname if exists
+ * @param querystring 
+ * @param fieldno
+ * @return fieldname
+ * @author SG HP
+ */
+static const char *get_field_name(const char *querystring, int fieldno)
+{
+	sqlite3_stmt *stmt;
+	char query[QUERY_SIZE];
+	int status;
+	const char *fieldname = NULL;
+	
+	/* Query to get fieldname */
+	sprintf(query, querystring, fieldno);
+	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+	
+	status = sqlite3_step(stmt);
+	if(status == SQLITE_ROW){ /* return fieldname if exists */
+		fieldname = strdup((const char*)sqlite3_column_text(stmt,0));
+	}
+	
+	sqlite3_finalize(stmt);
+	return fieldname;
+}
+
+/**
  * @brief Generate id for new file to be added in kwest
  * @param abspath - Absolute Path of File
  * @return fno
@@ -65,23 +127,23 @@ static int get_field_count(const char *querystring)
  */
 int set_file_id(const char *abspath)
 {
-	int tmp;
+	int tmp = -1;
 	
 	/* Check if file exists */
-	tmp = get_file_id((strrchr(abspath,'/')+1)); /* Get File ID */
+	tmp = get_file_id_by_abspath(abspath); /* Get File ID */
 	if(tmp != KW_FAIL){ 
 		return KW_FAIL; /* Return if file already exists */
 	}
 	
 	/* Query to get maximum no of files existing in database */
-	tmp = get_field_count("select count(fno) from FileDetails;");
+	tmp = get_field_count("select max(fno) from FileDetails;");
 	
 	if(tmp == KW_FAIL) {
 		return KW_FAIL;
 	} else if(tmp == NO_DB_ENTRY) { /* No Entry */
 		return FILE_START;
 	} else { /* Increment File ID */
-		return (tmp + 1);
+		return tmp + 1;
 	}
 }
 
@@ -133,46 +195,84 @@ int set_tag_id(const char *tagname,int tagtype)
 	}
 }
 
-
 /**
- * @brief Return id for specified field
- * @param querystring 
- * @param fieldname
- * @return field_id
- * @author SG HP
+ * @brief Return id for file in kwest
+ * @param abspath
+ * @return fno 
+ * @author SG
  */
-static int get_field_id(const char *querystring, const char *fieldname)
+int get_file_id_by_abspath(const char *abspath)
 {
-	sqlite3_stmt *stmt = NULL;
-	char query[QUERY_SIZE];
-	int status;
-	
-	/* Query to get field_id */
-	strcpy(query, querystring);
-	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-	sqlite3_bind_text(stmt,1, fieldname,-1,SQLITE_STATIC);
-	
-	status = sqlite3_step(stmt);
-	if(status == SQLITE_ROW) { /* Return field_id if entry exists */
-		status = atoi((const char*)sqlite3_column_text(stmt,0));
-		sqlite3_finalize(stmt);
-		return status;
-	}
-	
-	sqlite3_finalize(stmt);
-	return KW_FAIL;
+	return get_field_id("select fno from FileDetails where "
+	                    "abspath = :fieldname;", abspath);
 }
 
 /**
  * @brief Return id for file in kwest
- * @param fname - file name
+ * @param path Kwest path containing tags
+ * @return fno 
+ * @author SG
+ */
+int get_file_id_by_intersection(const char *path)
+{
+	char query[QUERY_SIZE];
+	char *tmp_ptr,*tmp_path;
+	char *tag;
+	char tagid[5];
+	
+	tmp_path = strdup(path);
+	strcpy(query,"");
+	
+	while( (tmp_ptr = strrchr(tmp_path,'/')) != NULL)
+	{
+		tag = tmp_ptr + 1;
+		*tmp_ptr = '\0';
+		
+		sprintf(tagid,"%d",get_tag_id(tag));
+		strcat(query,"select fno from FileAssociation where tno=");
+		strcat(query,tagid);
+		if((tmp_ptr = strrchr(tmp_path,'/')) != NULL) {
+			strcat(query," INTERSECT ");
+		} else {
+			break;
+		}
+	}
+	free((char*)tmp_path);
+	
+	return 0;
+}
+
+/**
+ * @brief Return id for file in kwest
+ * @param path Path containing tagname and filename
  * @return fno 
  * @author SG HP
  */
-int get_file_id(const char *fname)
+int get_file_id_by_tag(const char *path)
 {
-	return get_field_id("select fno from FileDetails where "
-	                    "fname = :fieldname;", fname);
+	char query[QUERY_SIZE];
+	char *filename = strrchr(path, '/') + 1;
+	char *tptr = filename -2;
+	char *tagname = NULL;
+	char *t2 = NULL;
+	int tno;
+	
+	while(*tptr != '/') tptr--; /* seperat directory name */
+	tptr++;
+	
+	tagname = malloc(filename - tptr);
+	t2 = tagname;
+	while(*tptr != '/') {
+		*t2 = *tptr;
+		t2++; tptr++;
+	}
+	*t2 = '\0';
+	
+	tno=get_tag_id(tagname);
+	sprintf(query,"select fno from FileAssociation where tno = %d INTERSECT"
+	        " select fno from FileDetails where fname = :fieldname;",tno);
+	
+	return get_field_id(query, filename);
 }
 
 /**
@@ -185,34 +285,6 @@ int get_tag_id(const char *tname)
 {
 	return get_field_id("select tno from TagDetails where "
 	                    "tagname = :fieldname;", tname);
-}
-
-
-/**
- * @brief Retrieve fieldname if exists
- * @param querystring 
- * @param fieldno
- * @return fieldname
- * @author SG HP
- */
-const char *get_field_name(const char *querystring, int fieldno)
-{
-	sqlite3_stmt *stmt;
-	char query[QUERY_SIZE];
-	int status;
-	const char *fieldname = NULL;
-	
-	/* Query to get fieldname */
-	sprintf(query, querystring, fieldno);
-	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-	
-	status = sqlite3_step(stmt);
-	if(status == SQLITE_ROW){ /* return fieldname if exists */
-		fieldname = strdup((const char*)sqlite3_column_text(stmt,0));
-	}
-	
-	sqlite3_finalize(stmt);
-	return fieldname;
 }
 
 /**
@@ -238,4 +310,3 @@ const char *get_tag_name(int tno)
 	return get_field_name("select tagname from TagDetails where "
 	                      "tno = %d", tno);
 }
-

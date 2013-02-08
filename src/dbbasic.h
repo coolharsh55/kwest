@@ -42,12 +42,12 @@ int remove_tag(const char *tagname);
 /*
  * Add file to kwest
  */
-int add_file(const char *abspath);
+int add_file(const char *abspath,const char *tagname);
 
 /*
  * Remove file form kwest 
  */
-int remove_file(const char *path);
+int remove_file(int fno);
 
 /*
  * Add new category to identify metadata 
@@ -59,12 +59,12 @@ int add_meta_info(const char *filetype,const char *tag);
 /*
  * Associate a tag with a file 
  */
-int tag_file(const char *t,const char *f);
+int tag_file(const char *t,int fno);
 
 /*
  * Remove the existing association between the tag and file
  */
-int untag_file(const char *t,const char *f);
+int untag_file(const char *t,int fno);
 
 /*
  * Return list of files associated to given tag 
@@ -74,7 +74,7 @@ sqlite3_stmt *get_fname_under_tag(const char *t);
 /*
  * Return list of tags associated with a given file
  */
-sqlite3_stmt *get_tags_for_file(const char *f);
+sqlite3_stmt *get_tags_for_file(const char *path);
 
 
 /*----------------- Tag-Tag Relation ------------------*/

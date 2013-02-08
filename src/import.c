@@ -64,6 +64,8 @@ static int import_semantics(const char *path,const char *dirname)
 		
 		/* Calculate full name, check we are in file length limts */
 		if ((path_len + dir_len + 1) > _POSIX_PATH_MAX){
+			log_msg("import semantics: path length limit reached "
+			        "for %s", path);
 			continue;
 		}
 		strcpy(full_name, path);
@@ -84,6 +86,8 @@ static int import_semantics(const char *path,const char *dirname)
 		
 		/* Get File Infromation : Returns 0 if successful */
 		if (stat(full_name, &fstat) < 0){
+			log_msg("import semantics: cannot get file information "
+			        " for %s", path);
 			continue;
 		}
 		
@@ -102,11 +106,8 @@ static int import_semantics(const char *path,const char *dirname)
 			
 		} else if(S_ISREG(fstat.st_mode)) { /* Regular File */
 			
-			if(add_file(full_name) == KW_SUCCESS){
+			if(add_file(full_name,dirname) == KW_SUCCESS){
 				printf("Added File  : %s\n",entry->d_name);
-				
-				/* Tag-File Relation */
-				tag_file(dirname,entry->d_name);
 			}
 		}
 	}
