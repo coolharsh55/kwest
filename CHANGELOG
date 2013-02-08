@@ -1,3 +1,7 @@
+**2013 Feb 08**
+Added module to check database consistency
+Added feature for allowing duplication of filenames
+
 **2013 Feb 07**
 corrected datatypes for database tables
 
