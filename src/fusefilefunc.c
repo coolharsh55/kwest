@@ -86,7 +86,54 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 	int res;
 	const char *abspath = get_absolute_path(path);
 	log_msg("mknod: %s",path);
-
+	
+	/* @HP here I am checking the path validity assuming that the file 
+	 * already exists! But that will happen only when it is external.
+	 * For internal files, i.e within fuse, if check_path fails
+	 * then assume that it is a new file.
+	 * in that case, you only have to check that all the directories
+	 * are in order. the last token is the new filename
+	 * eg. mknod /Files/Music/testfile.txt
+	 * then check_path_validity != KW_SUCCESS
+	 * check assoc between /Files/Music as we do in check_path
+	 * if all OK, then procedd to assume that testfile.txt is a new file
+	 * so here you have to check whether testfile.txt exists in db
+	 * if it does, does it have the same tags???
+	 * our condition, unique path to a file should be check and should
+	 * hold true. that is the only criteria.
+	 * now here the path is /Files. So allow creation of file in whatever
+	 * path there is for other files. Like in /Files/Music the path
+	 * is /home/user/Music
+	 * what to do when user starts creating files elsewhere?
+	 * where to create those files?
+	 * should we allow creation of files only in Music???
+	 * otherwise that is the basic code
+	 * for now assume that all cp/mv operations happen within /Music
+	 * let me know if this is understandable
+	 * 
+	 * the following is my pseudo-code---
+	 */
+	 
+	 /* @HP
+	  * if(check_path_validity(path) != KW_SUCCESS) {
+		  * if(check_path_for_newfile(path) == KW_SUCCESS) {
+			  * create new file on physical medium
+			  * get a path on physical medium
+			  * as abspath = new file outside kwest
+			  * func **get_new_file**
+			  * in file dbfuse
+			  * abspath = get_newfile_path(path);
+			  * res = mknod(abspath, mode, rdev);
+			  * that's it!!!
+		  * } else {
+			  * log_msg("PATH NOT VALID");
+			  * return -ENOENT;
+		  * }
+	  * } else {
+		  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+		  * find matching bracket before last function
+	  */
+	  
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
@@ -107,10 +154,22 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 		if (S_ISFIFO(mode)) { /* file is a pipe */
 			res = mkfifo(abspath, mode);
 		} else { /* its a file */
+		/* @HP this is where the file gets created */
+		/* so here, you must make sure that the abspath mentioned
+		 * here actually points to some real location where the file
+		 * will get created
+		 */
 			log_msg("FILE MODE PROGRAM");
 			res = mknod(abspath, mode, rdev);
 		}
 	}
+	
+	/* 
+	 * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	 * find matching bracket above in comments
+	 * }
+	 */
+	 
 	if (res == -1) {
 		return -errno;
 	}

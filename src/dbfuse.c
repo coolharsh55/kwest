@@ -132,6 +132,55 @@ int check_path_validity(const char *path)
 	return KW_FAIL;
 }
 
+
+/**
+ * @brief checks whether current path is valid in database
+ * @param path
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author HP SG
+ */
+int check_path_for_newfile(const char *path)
+{
+	char *tmp_path,*tmp_ptr;
+	
+	if(*(path + 1) == '\0') {
+		return KW_ERROR;
+	}
+	/*
+	 * @HP
+	 * parse tokens until the very last one
+	 * const char *last_token = strrchr(path, '/');
+	 * if(last_token == NULL) {
+		 * return KW_ERROR;
+	 * }
+	 * const char *tokenizer = path;
+	 * const char *prev_token = path;
+	 * char buffer[QUERY_SIZE];
+	 * while(tokenizer != last_token) {
+		 * tokenizer = strchr(path+1, '/');
+		 * if(tokenizer == NULL) {
+			 * take appropriate action
+		 * }
+		 * strncpy(buffer, prev_token+1, 
+		 *         ((tokenizer-prev_token)/sizeof(char))-1);
+		 * problem:
+		 * you have your function get_entry_name
+		 * and check_association...
+		 * it doesn't check association for the last token, right?
+		 * it shouldn't...
+		 * so that's all we do here
+		 * we check associations for all except last token.
+	} * 
+	 * check if all the others are tags
+	 * 
+	 */
+	 
+	
+	return KW_FAIL;
+}
+
+
+
 /**
  * @brief checks whether given path has a directory entry
  * @param path
@@ -229,6 +278,19 @@ char *readdir_files(const char *path, void **ptr)
  */
 const char *get_newfile_path(const char *path)
 {
+	/*
+	 * @HP
+	 * this function should get path to some real location
+	 * so that the new file can be created there
+	 * parse path - there will be the format
+	 * /Files/Music/tags.../filename.ext
+	 * so try to get directory /Music/tags... or something
+	 * then return that...
+	 * 
+	 * char *path = some_new_path
+	 * 
+	 * return (const char *)path;
+	 */
 	return NULL;
 }
 
