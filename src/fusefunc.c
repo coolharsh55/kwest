@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <fuse.h>
 
@@ -64,7 +65,9 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	
 	if(path_is_dir(path) == true) {
 		log_msg("PATH IS DIR");
-		stbuf->st_mode= S_IFDIR | KW_STDIR;
+		stbuf->st_mode = S_IFDIR | KW_STDIR;
+		stbuf->st_uid = getuid();
+		stbuf->st_gid = getgid();
 		stbuf->st_nlink=1;
 		return 0;
 	} else if(path_is_file(path) == true) {
@@ -75,6 +78,8 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 			return -EIO;
 		}
 		if(stat(abspath,stbuf) == 0) {
+			log_msg("stat dump");
+			log_msg("uid_t:%d", stbuf->st_uid);
 			free((char *)abspath);
 			return 0;
 		} else {
