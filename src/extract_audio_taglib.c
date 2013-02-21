@@ -74,20 +74,20 @@ static char *format_string(char *string)
 {
 	int i;
 	
-	for(i = 0; string[i] != '\0'; i++) {
+	for (i = 0; string[i] != '\0'; i++) {
 		
-		if(i == 0 || !isalpha(string[i-1])) {
+		if (i == 0 || !isalpha(string[i-1])) {
 			string[i] = toupper(string[i]);
 		} else {
 			string[i] = tolower(string[i]);
 		}
-		if(string[i] == '/' || string[i] == '\\') {
+		if (string[i] == '/' || string[i] == '\\') {
 		string[i] = ' ';
 		}
 	}
 	
 	/* Remove End of string White Spaces */
-	while(string[--i]==' '); string[++i]='\0';
+	while (string[--i]==' '); string[++i]='\0';
 	
 	return string;
 }
@@ -102,11 +102,11 @@ static char *format_string(char *string)
 TagLib_File *extract_metadata_file(const char* path, struct metadata_audio *M)
 {
 	TagLib_File* file = taglib_file_new(path); 
-	if(file == NULL) {
+	if (file == NULL) {
 		/* log_error("is_audio","ERROR opening file"); */
 		return NULL;
 	}
-	if(taglib_file_is_valid(file) == 0) {
+	if (taglib_file_is_valid(file) == 0) {
 		extract_clear_strings(file);
 		return NULL;
 	}
@@ -132,11 +132,11 @@ int is_audio(const char* path)
 {
 	TagLib_File* file = NULL;
 	file = taglib_file_new(path);
-	if(file == NULL) {
+	if (file == NULL) {
 		/* log_error("is_audio","ERROR opening file"); */
 		return -1;
 	}
-	if(taglib_file_is_valid(file) != 0) {
+	if (taglib_file_is_valid(file) != 0) {
 		taglib_file_free(file);
 		return 0;
 	} else {

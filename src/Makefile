@@ -22,6 +22,24 @@ logging.o: logging.c
 dbfuse.o: dbfuse.c
 	gcc -c -Wall -std=gnu99 dbfuse.c 
 
+test: test.o plugins_extraction.o metadata_extract.o plugin_taglib.o
+	gcc -o test -std=gnu99 test.o plugins_extraction.o metadata_extract.o plugin_taglib.o
+
+test.o: test.c
+	gcc -c -Wall -Wextra -pedantic -std=gnu99 test.c
+
+plugins_extraction.o : plugins_extraction.c
+	gcc -c -Wall -Wextra -pedantic -std=gnu99 plugins_extraction.c
+
+metadata_extract.o : metadata_extract.c
+	gcc -c -Wall -Wextra -pedantic -std=gnu99 metadata_extract.c
+
+plugin_taglic.o : plugin_taglic.c
+	gcc -c -Wall -Wextra -pedantic -std=gnu99 plugin_taglib.c
+
+cleantest:
+	rm -rf *.o
+	rm -rf test
 
 clean:
 	rm -rf *.o

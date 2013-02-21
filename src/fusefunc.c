@@ -51,35 +51,33 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	const char *abspath = NULL;
 	log_msg("getattribute: %s",path);
 	
-	if(_is_path_root(path) == true) {
+	if (_is_path_root(path) == true) {
 		log_msg("PATH IS ROOT");
 		stbuf->st_mode= S_IFDIR | KW_STDIR;
 		stbuf->st_nlink=1;
 		return 0;
 	}
 	
-	if(check_path_validity(path) != KW_SUCCESS) {
+	if (check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
 	
-	if(path_is_dir(path) == true) {
+	if (path_is_dir(path) == true) {
 		log_msg("PATH IS DIR");
 		stbuf->st_mode = S_IFDIR | KW_STDIR;
 		stbuf->st_uid = getuid();
 		stbuf->st_gid = getgid();
 		stbuf->st_nlink=1;
 		return 0;
-	} else if(path_is_file(path) == true) {
+	} else if (path_is_file(path) == true) {
 		log_msg("PATH IS FILE");
 		abspath=get_absolute_path(path);
 		stbuf->st_mode= S_IFREG | KW_STFIL;
-		if(abspath == NULL) {
+		if (abspath == NULL) {
 			return -EIO;
 		}
-		if(stat(abspath,stbuf) == 0) {
-			log_msg("stat dump");
-			log_msg("uid_t:%d", stbuf->st_uid);
+		if (stat(abspath,stbuf) == 0) {
 			free((char *)abspath);
 			return 0;
 		} else {
@@ -111,14 +109,14 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	log_msg("readdir: %s",path);
 	
 	/*
-	if(check_path_validity(path) != KW_SUCCESS) {
+	if (check_path_validity(path) != KW_SUCCESS) {
 		return -ENOENT;
 	}
 	*/
 	memset(&st, 0, sizeof(st));
 	st.st_mode = S_IFDIR | KW_STDIR;
 	
-	while((direntry = readdir_dirs(path, &ptr)) != NULL) {
+	while ((direntry = readdir_dirs(path, &ptr)) != NULL) {
 		if (filler(buf, direntry, &st, 0) == 1) {
 			break;
 		}
@@ -128,7 +126,7 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	memset(&st, 0, sizeof(st));
 	st.st_mode = S_IFREG | KW_STFIL;
 	
-	while((direntry = readdir_files(path, &ptr)) != NULL) {
+	while ((direntry = readdir_files(path, &ptr)) != NULL) {
 		if (filler(buf, direntry, &st, 0) == 1) {
 			break;
 		}
@@ -154,16 +152,16 @@ static int kwest_access(const char *path, int mask)
 	return 0; 
 	/* for time being */
 	
-	if(check_path_validity(path) != KW_SUCCESS) {
+	if (check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	if(*(path + 1) == '\0') {
+	if (*(path + 1) == '\0') {
 		return 0;
 	}
 	
 	abspath = get_absolute_path(path);
-	if(abspath == NULL) {
+	if (abspath == NULL) {
 		log_msg("ABSOLUTE PATH ERROR");
 		return -EIO;
 	}
