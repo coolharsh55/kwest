@@ -2,24 +2,29 @@ KEY:
 ! IMPORTANT - needs to be done right away
 $ NECESSARY, BUT NOT URGENT - can be done after important stuff
 ~ LATER - can be done later
+X DONE - you can :)
 
 
 HP:
-! git folder structure - change to some standard folders
-! paper - association rules & apriori algo
-$ generalize metadata - use single function to extract and seperate header to fetch
+X git folder structure - change to some standard folders
+X paper - association rules & apriori algo
+X generalize metadata - use single function to extract and seperate header to fetch
 ~ more data mining algorithms - alternatives to apriori
-$ use functors for callback mechanism
-! fuse unmount operation
+X use functors for callback mechanism
+X fuse unmount operation
 $ create system for debugging - fuse debug options & source debugging
-! pseudocode for cp/mv
+X pseudocode for cp/mv
+X create shared libraries - .so objects
+X splint tool for static code checking - learn how to use / parameters
+X valgrind/frama-c - tools for debugging and checking C code
 
 SG:
-~ strcpy - use explicit length checking
+X strcpy - use explicit length checking
 $ apriori algorithm - initiate
-~ consistency in function comments, formats - put all comments in source file
+X consistency in function comments, formats - put all comments in source file
 ! cp/mv - copy/move within & outside kwest fs
 ! duplicate file naming - with unique path criterion
+X parsing and cleaning metadata
 
 
 AG:
@@ -28,7 +33,7 @@ $ makefile - use autotools/cmake/scons
 $ previous semester diary/documentation
 
 RC:
-! conference details and dates
+X conference details and dates
 $ readme, FAQ, news etc. documents - refer to standard project - ask @SG
 ! libextractor integrate with extract_metadata
 $ database consistency - DB exists, tables exists, files are valid, any new files to add?
@@ -38,9 +43,6 @@ UNASSIGNED:
 ~ test cases using scripts
 $ doxygen - learn, study, implement
 ! logfile in database
-~ create shared libraries - .so objects
-~ splint tool for static code checking - learn how to use / parameters
-~ valgrind/frama-c - tools for debugging and checking C code
 ~ how to make a list of recently used files?
 ! check for memory leaks
 ~ create config file to manage kwest operations
@@ -49,6 +51,5 @@ $ doxygen - learn, study, implement
 $ reflect changes on actual filesystem
 ~ paper on need of more than semantic file system
 ~ paper on detailed kwest application filesystem
-! parsing and cleaning metadata
 ! libpoppler pdf extract title etc.
 ~ allow query through special KEYWORDS in path

@@ -38,7 +38,7 @@
  */
 bool _is_path_root(const char *path) 
 {
-	if(*(path+1) == '\0') {
+	if (*(path+1) == '\0') {
 		return true;
 	}
 	else {
@@ -71,18 +71,18 @@ static int check_association(const char *path)
 	
 	tmp_path = strdup(path);
 	
-	while( (tmp_ptr = strrchr(tmp_path,'/')) != NULL)
+	while ( (tmp_ptr = strrchr(tmp_path,'/')) != NULL)
 	{
 		tag1 = tmp_ptr + 1;
 		*tmp_ptr = '\0';
 		
-		if((tmp_ptr = strrchr(tmp_path,'/')) == NULL) {
+		if ((tmp_ptr = strrchr(tmp_path,'/')) == NULL) {
 			break;
 		}
 		tag2 = tmp_ptr + 1;
 		
 		assn = get_association(tag1,tag2);
-		if(assn == KW_ERROR || assn == KW_FAIL) {
+		if (assn == KW_ERROR || assn == KW_FAIL) {
 			return KW_FAIL;
 		}
 	}
@@ -101,18 +101,18 @@ int check_path_validity(const char *path)
 {
 	char *tmp_path,*tmp_ptr;
 	
-	if(*(path + 1) == '\0') {
+	if (*(path + 1) == '\0') {
 		return KW_SUCCESS;
 	}
-	if(istag(get_entry_name(path)) == true) {
-		if(check_association(path) == KW_SUCCESS) {
+	if (istag(get_entry_name(path)) == true) {
+		if (check_association(path) == KW_SUCCESS) {
 			return KW_SUCCESS;
 		}
-	} else if(isfile(get_entry_name(path)) == true) {
+	} else if (isfile(get_entry_name(path)) == true) {
 		tmp_path = strdup(path);
 		tmp_ptr = strrchr(tmp_path,'/');
 		*tmp_ptr='\0';
-		if(check_association(tmp_path) == KW_SUCCESS) {
+		if (check_association(tmp_path) == KW_SUCCESS) {
 			free((char *)tmp_path);
 			return KW_SUCCESS;
 		}
@@ -122,7 +122,7 @@ int check_path_validity(const char *path)
 	}
 	/*
 	 * const char *tag1 = strchr(path);
-	 * if(tag1 == path) { / * no of entries = 1 * /
+	 * if (tag1 == path) { / * no of entries = 1 * /
 		 * return KW_SUCCESS;
 	 * }
 	 * 
@@ -140,7 +140,7 @@ int check_path_validity(const char *path)
  */
 bool path_is_dir(const char *path)
 {
-	if(istag(get_entry_name(path)) != true)
+	if (istag(get_entry_name(path)) != true)
 		return false;
 	return true;
 }
@@ -153,7 +153,7 @@ bool path_is_dir(const char *path)
  */
 bool path_is_file(const char *path)
 {
-	if(isfile(get_entry_name(path)) != true) {
+	if (isfile(get_entry_name(path)) != true) {
 		return false;
 	}
 	
@@ -181,14 +181,14 @@ const char *get_absolute_path(const char *path)
 char *readdir_dirs(const char *path, void **ptr)
 {
 	log_msg ("readdir_dirs: %s",path);
-	if(*ptr == NULL) {
-		if(*(path + 1) == '\0') {
+	if (*ptr == NULL) {
+		if (*(path + 1) == '\0') {
 			*ptr=get_tags_by_association(TAG_ROOT, ASSOC_SUBGROUP);
 		} else {
 			const char *t = strrchr(path,'/');
 			*ptr = get_tags_by_association(t + 1, ASSOC_SUBGROUP); 
 		}
-		if(*ptr == NULL) {
+		if (*ptr == NULL) {
 			return NULL;
 		}
 	}
@@ -206,14 +206,14 @@ char *readdir_dirs(const char *path, void **ptr)
 char *readdir_files(const char *path, void **ptr)
 {
 	log_msg ("readdir_files: %s",path);
-	if(*ptr == NULL) {
-		if(*(path + 1) == '\0') {
+	if (*ptr == NULL) {
+		if (*(path + 1) == '\0') {
 			*ptr = get_fname_under_tag(TAG_ROOT);
 		} else {
 			const char *t = strrchr(path,'/');
 			*ptr = get_fname_under_tag(t + 1); 
 		}
-		if(*ptr == NULL) {
+		if (*ptr == NULL) {
 			return NULL;
 		}
 	}
@@ -229,6 +229,7 @@ char *readdir_files(const char *path, void **ptr)
  */
 const char *get_newfile_path(const char *path)
 {
+	(void)path;
 	return NULL;
 }
 
@@ -259,18 +260,18 @@ int remove_this_file(const char *path)
 	char *t2 = NULL;
 	
 	log_msg ("remove_this_file: %s",path);
-	while(*tptr != '/') tptr--; /* seperat directory name */
+	while (*tptr != '/') tptr--; /* seperat directory name */
 	tptr++;
 	
 	tagname = malloc(filename - tptr);
 	t2 = tagname;
-	while(*tptr != '/') {
+	while (*tptr != '/') {
 		*t2 = *tptr;
 		t2++; tptr++;
 	}
 	*t2 = '\0';
 	
-	if(untag_file(tagname, filename) == KW_SUCCESS) {
+	if (untag_file(tagname, filename) == KW_SUCCESS) {
 		log_msg("remove_this_file: untag file successful");
 		free(tagname);
 		return KW_SUCCESS;
@@ -294,28 +295,28 @@ int make_directory(const char *path, mode_t mode)
 	char *tptr = NULL;
 	char *parenttag = NULL;
 	char *t2 = NULL;
-	
+	(void)mode;
 	log_msg ("make_directory: %s",path);
 	newtag = (char *)get_entry_name(path);
 	
-	if(add_tag(newtag,USER_TAG) != KW_SUCCESS) {
+	if (add_tag(newtag,USER_TAG) != KW_SUCCESS) {
 		log_msg ("make_directory: failed to add tag %s",newtag);
 		return KW_FAIL;
 	}
 	
 	tptr = newtag -2;
-	while(*tptr != '/') tptr--;
+	while (*tptr != '/') tptr--;
 	tptr++;
 	
 	parenttag = malloc(newtag - tptr);
 	t2 = parenttag;
-	while(*tptr != '/') {
+	while (*tptr != '/') {
 		*t2 = *tptr;
 		t2++; tptr++;
 	}
 	*t2 = '\0';
 	
-	if(add_association(newtag, parenttag, ASSOC_SUBGROUP) != KW_SUCCESS) {
+	if (add_association(newtag, parenttag, ASSOC_SUBGROUP) != KW_SUCCESS) {
 		log_msg ("make_directory: failed to add association");
 		return KW_FAIL;
 	}
@@ -334,7 +335,7 @@ int remove_directory(const char *path)
 {
 	log_msg ("remove_directory: %s",path);
 	
-	if(remove_tag(get_entry_name(path)) == KW_SUCCESS) {
+	if (remove_tag(get_entry_name(path)) == KW_SUCCESS) {
 		return KW_SUCCESS;
 	}
 	

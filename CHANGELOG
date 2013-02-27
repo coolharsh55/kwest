@@ -1,3 +1,24 @@
+**2013 Feb 27**
+fixed memory leaks on filesystem umount
+plugin system through dynamic SO
+modified sample Makefile
+seperated files into git folders
+
+**2013 Feb 26**
+apriori working on kwest database
+plugin system integrated
+generalized metadata extraction format
+
+**2013 Feb 25**
+apriori working for sample dataset
+
+**2013 Feb 21**
+created static plugin structure
+apriori algorithm implementation
+
+**2013 Feb 16**
+corrected group id and owner display - both are now current_user
+
 **2013 Feb 07**
 corrected datatypes for database tables
 

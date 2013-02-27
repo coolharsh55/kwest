@@ -28,11 +28,13 @@
 #include "dbbasic.h"
 #include "dbinit.h"
 #include "dbkey.h"
-#include "extract_audio_taglib.h"
+/*#include "extract_audio_taglib.h"*/
 #include "logging.h"
 #include "flags.h"
 #include "magicstrings.h"
 
+#include "metadata_extract.h"
+#include "plugins_extraction.h"
 
 /* ---------- Local Functions --------------------- */
 
@@ -44,8 +46,7 @@ static int add_metadata_file(int fno,const char *abspath,char *fname);
 /*
  * Form association for metadata in file
  */
-static void associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname);
+
 
 /* ---------------- ADD/REMOVE -------------------- */
 
@@ -167,8 +168,8 @@ int add_file(const char *abspath)
 		sqlite3_finalize(stmt);
 		return KW_FAIL;
 	}
-	sqlite3_finalize(stmt);
 	
+	sqlite3_finalize(stmt);
 	/* Get Metadata for file */
 	add_metadata_file(fno,abspath,fname);
 	
@@ -190,11 +191,14 @@ int add_file(const char *abspath)
 static int add_metadata_file(int fno,const char *abspath,char *fname)
 {
 	sqlite3_stmt *stmt;
-	char query[QUERY_SIZE];
+	/*char query[QUERY_SIZE];*/
+	char q2[QUERY_SIZE];
 	int status;
-	struct metadata_audio M; 
+	int i = 0;
+/*	struct metadata_audio M; */
+	struct kw_metadata kw_M;
 	/*! struct metadata M; */
-	void *meta;
+	/*void *meta;*/
 	
 	/*!
 	 * meta = extract_metadata(abspath, &M);
@@ -202,18 +206,33 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 		 * return KW_ERROR;
 	 * }
 	 */
-	meta = extract_metadata_file(abspath, &M);
+	/*meta = extract_metadata_file(abspath, &M);
+	
+	
+	
 	if(meta == NULL) {
 		extract_clear_strings(meta);
 		return KW_ERROR;
 	}
+	*/
+	/*strcpy(query,"insert into Audio values"
+	             "(:fno,:title,:artist,:album,:genre);");*/
 	
-	/*! is this title,artist,album etc field necessary?
-	 * how are we supposed to store metadata in an abstract way?
-	 */
-	strcpy(query,"insert into Audio values"
-	             "(:fno,:title,:artist,:album,:genre);");
-	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0); 
+	status = metadata_extract(abspath, &kw_M);
+	if(status == KW_FAIL) {
+		return KW_ERROR;
+	}
+	strcpy(q2, "insert into ");
+	strcat(q2, kw_M.type);
+	strcat(q2, " values(:fno");
+	for (i=0 ; i<kw_M.tagc ; i++) {
+		strcat(q2,",:");
+		strcat(q2,kw_M.tagtype[i]);
+	}
+	strcat(q2,");");
+	log_msg(q2);
+	/*sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0); */
+	sqlite3_prepare_v2(get_kwdb(),q2,-1,&stmt,0); 
 	
 	/*! int i = 1;
 	 * for(; i<=M.argc ; i++) {
@@ -221,26 +240,30 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	 * }
 	 */
 	sqlite3_bind_int(stmt,1,fno);
-	sqlite3_bind_text(stmt,2,M.title,-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,3,M.artist,-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,4,M.album,-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,5,M.genre,-1,SQLITE_STATIC);
-	
+	sqlite3_bind_text(stmt,2,kw_M.tagv[0],-1,SQLITE_STATIC);
+	sqlite3_bind_text(stmt,3,kw_M.tagv[1],-1,SQLITE_STATIC);
+	sqlite3_bind_text(stmt,4,kw_M.tagv[2],-1,SQLITE_STATIC);
+	sqlite3_bind_text(stmt,5,kw_M.tagv[3],-1,SQLITE_STATIC);
+	log_msg(q2);
 	status = sqlite3_step(stmt);
 	
 	if(status == SQLITE_DONE){
-		associate_file_metadata(TAG_ARTIST,M.artist,fname);
-		associate_file_metadata(TAG_ALBUM,M.album,fname);
-		associate_file_metadata(TAG_GENRE,M.genre,fname);
+		/*
+		associate_file_metadata(TAG_ARTIST,kw_M.tagv[1],fname);
+		associate_file_metadata(TAG_ALBUM,kw_M.tagv[2],fname);
+		associate_file_metadata(TAG_GENRE,kw_M.tagv[3],fname);*/
+		kw_M.obj = (void *)fname;		
 	} else { /* Handle if Error while Adding Metadata */
 		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,fname);
-		extract_clear_strings(meta);
+		/*extract_clear_strings(meta);*/
+		kw_M.do_cleanup(&kw_M);
 		sqlite3_finalize(stmt);
 		return KW_FAIL;
 	}
-	extract_clear_strings(meta);
+	kw_M.do_cleanup(&kw_M);
+	/*extract_clear_strings(meta);*/
 	sqlite3_finalize(stmt);
-	
+
 	return KW_SUCCESS;
 }
 
@@ -252,7 +275,7 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
  * @return void
  * @author SG
  */
-static void associate_file_metadata(const char *metatype,const char *tagname,
+int associate_file_metadata(const char *metatype,const char *tagname,
                             const char *fname)
 {
 	char *newtag=NULL;
@@ -277,6 +300,7 @@ static void associate_file_metadata(const char *metatype,const char *tagname,
 		/* Tag File to Metadata Tag */
 		tag_file(tagname,fname);
 	}
+	return KW_SUCCESS;
 }
 
 /**
@@ -370,16 +394,15 @@ int tag_file(const char *t,const char *f)
 	char query[QUERY_SIZE];
 	int status;
 	int fno,tno;
-	
 	fno = get_file_id(f); /* Get File ID */
 	if(fno == KW_FAIL){ /* Return if File not found */
-		printf("tag_file : %s%s",ERR_FILE_NOT_FOUND,f);
+		log_msg("tag_file : %s%s",ERR_FILE_NOT_FOUND,f);
 		return KW_ERROR;
 	}
 	
 	tno = get_tag_id(t); /* Get Tag ID */
 	if(tno == KW_FAIL){ /* Return if Tag not found */
-		printf("tag_file : %s%s",ERR_TAG_NOT_FOUND,t);
+		log_msg("tag_file : %s%s",ERR_TAG_NOT_FOUND,t);
 		return KW_ERROR;
 	}
 	
@@ -520,7 +543,7 @@ sqlite3_stmt *get_tags_for_file(const char *f)
 	
 	fno = get_file_id(f); /* Get File ID */
 	if(fno == KW_FAIL){ /* Return if File not found */
-		printf("get_tags_for_file : %s%s",ERR_FILE_NOT_FOUND,f);
+		log_msg("get_tags_for_file : %s%s",ERR_FILE_NOT_FOUND,f);
 		return NULL;
 	}
 	
@@ -552,7 +575,6 @@ int add_association(const char *t1,const char *t2,int associationid)
 	char query[QUERY_SIZE];
 	int status;
 	int t1_id,t2_id;
-	
 	/* Return if relation Undefined */
 	if(is_association_type(associationid) == 0){ 
 		log_msg("add_association : %s%d",ERR_REL_NOT_DEF,associationid);
@@ -603,20 +625,20 @@ int remove_association(const char *t1,const char *t2,int associationid)
 	
 	/* Return if relation Undefined */
 	if(is_association_type(associationid) == 0){ 
-		printf("remove_association : %s%d",ERR_REL_NOT_DEF,
+		log_msg("remove_association : %s%d",ERR_REL_NOT_DEF,
 		       associationid);
 		return KW_ERROR;
 	}
 	
 	t1_id = get_tag_id(t1); /* Get Tag ID for tag t1*/
 	if(t1_id == KW_FAIL){ /* Return if Tag not found */
-		printf("remove_association : %s%s",ERR_TAG_NOT_FOUND,t1);
+		log_msg("remove_association : %s%s",ERR_TAG_NOT_FOUND,t1);
 		return KW_ERROR;
 	}
 	
 	t2_id = get_tag_id(t2); /* Get Tag ID for tag t2*/
 	if(t2_id == KW_FAIL){ /* Return if Tag not found */
-		printf("remove_association : %s%s",ERR_TAG_NOT_FOUND,t2);
+		log_msg("remove_association : %s%s",ERR_TAG_NOT_FOUND,t2);
 		return KW_ERROR;
 	}
 	
