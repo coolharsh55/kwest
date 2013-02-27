@@ -63,6 +63,7 @@ static int initializations(void)
 static int do_on_cleanup(struct kw_metadata *s)
 {
 	int i=0;
+	char *memchar = NULL;
 	
 	if (s->type != NULL) {
 		free(s->type);
@@ -72,44 +73,60 @@ static int do_on_cleanup(struct kw_metadata *s)
 		associate_file_metadata(TAG_ALBUM,s->tagv[2],s->obj);
 		associate_file_metadata(TAG_GENRE,s->tagv[3],s->obj);
 	}
+	/*
 	for(i=0 ; i<s->tagc ; i++) {
-		if (s->tagtype[i] != NULL) {
-			free(s->tagtype[i]);
+		memchar = s->tagtype[i];
+		if (memchar != NULL) {
+			free(memchar);
 		}
-		
-		if (s->tagv[i] != NULL) {
-			free(s->tagv[i]);
+		memchar = s->tagv[i];
+		if (memchar != NULL) {
+			free(memchar);
 		}
-		
 	}
+	*/
+	free(s->tagtype[0]);
+	free(s->tagv[0]);
+	free(s->tagtype[1]);
+	free(s->tagv[1]);
+	free(s->tagtype[2]);
+	free(s->tagv[2]);
+	free(s->tagtype[3]);
+	free(s->tagv[3]);
+	free(s->tagtype);
+	free(s->tagv);
 	return KW_SUCCESS;
 }
 
 
-static char *format_string(const char *origstring)
+static char *format_string(char *string)
 {
 	int i;
-	char *string = (char *)origstring;
-	for (i = 0; string[i] != '\0'; i++) {
-		
-		if (i == 0 || !isalpha(string[i-1])) {
-			string[i] = toupper(string[i]);
+	
+	if (string == NULL || string[0] == '\0') {
+		return string;
+	}
+	string[0] = (char)toupper((int)string[0]);
+	
+	for (i = 1; string[i] != '\0'; i++) {
+		if (!isalpha(string[i-1])) {
+			string[i] = (char)toupper((int)string[i]);
 		} else {
-			string[i] = tolower(string[i]);
+			string[i] = (char)tolower((int)string[i]);
 		}
 		if (string[i] == '/' || string[i] == '\\') {
 		string[i] = ' ';
 		}
 	}
-	
 	/* Remove End of string White Spaces */
-	while (string[--i]==' '); string[++i]='\0';
+	while (i-- > 0 && string[i] == ' '); string[++i]='\0';
 	
 	return string;
 }
 
 static int metadata_extract(const char *filename, struct kw_metadata *s)
 {
+	char *memchar = NULL;
 	s->obj = NULL;
 	s->do_cleanup = &do_on_cleanup;
 	if (!is_of_type(filename)) {		
@@ -124,15 +141,27 @@ static int metadata_extract(const char *filename, struct kw_metadata *s)
 	s->tagtype = (char **)malloc(4 * sizeof(char *));
 	s->tagv = (char **)malloc(4 * sizeof(char *));
 	
-	s->tagtype[0] = strdup("title");
-	s->tagtype[1] = strdup("artist");
-	s->tagtype[2] = strdup("album");
-	s->tagtype[3] = strdup("genre");
+	memchar = strdup("title");
+	s->tagtype[0] = memchar;
+	memchar = strdup("artist");
+	s->tagtype[1] = memchar;
+	memchar = strdup("album");
+	s->tagtype[2] = memchar;
+	memchar = strdup("genre");
+	s->tagtype[3] = memchar;
 	
-	s->tagv[0] = strdup(format_string(taglib_tag_title(tag)));
-	s->tagv[1] = strdup(format_string(taglib_tag_artist(tag)));
-	s->tagv[2] = strdup(format_string(taglib_tag_album(tag)));
-	s->tagv[3] = strdup(format_string(taglib_tag_genre(tag)));
+	memchar = strdup(taglib_tag_title(tag));
+	memchar = format_string(memchar);
+	s->tagv[0] = memchar;
+	memchar = strdup(taglib_tag_artist(tag));
+	memchar  = format_string(memchar);
+	s->tagv[1] = memchar;
+	memchar = strdup(taglib_tag_album(tag));
+	memchar = format_string(memchar);
+	s->tagv[2] = memchar;
+	memchar = strdup(taglib_tag_genre(tag));
+	memchar = format_string(memchar);
+	s->tagv[3] = memchar;
 	
 	s->obj = file;
 	s->do_init = &do_on_init;
@@ -140,9 +169,7 @@ static int metadata_extract(const char *filename, struct kw_metadata *s)
 	
 	taglib_tag_free_strings();
 	taglib_file_free(file);
-	
-	
-	
+
 	return KW_SUCCESS;
 }
 
@@ -198,3 +225,4 @@ struct plugin_extraction_entry *load_this_plugin()
 	
 	return plugin;
 }
+

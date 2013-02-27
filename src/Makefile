@@ -34,13 +34,13 @@ kwest_libs: kw_taglib
 kw_taglib: plugin_taglib
 
 plugin_taglib: plugin_taglib.o kwt_upd_meta.o
-	gcc -shared -I./include -Wl,-soname,libkw_taglib.so -o $(LIB)/libkw_taglib.so -ltag -ltag_c plugin_taglib.o kwt_upd_meta.o
+	gcc -g -shared -I$(INCLUDE) -Wl,-soname,libkw_taglib.so -o $(LIB)/libkw_taglib.so -ltag -ltag_c plugin_taglib.o kwt_upd_meta.o
 
 plugin_taglib.o:
-	gcc -c -I./include -Wall -Wextra -pedantic -std=gnu99 -fPIC -ltag_c -c plugin_taglib.c
+	gcc -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -std=gnu99 -fPIC -ltag_c -c plugin_taglib.c
 
 kwt_upd_meta.o:
-	g++ -c -Wall -Wextra -pedantic -fPIC -ltag kwt_upd_meta.cpp
+	g++ -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -fPIC -ltag kwt_upd_meta.cpp
 
 c: clean
 

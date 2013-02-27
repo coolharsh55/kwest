@@ -92,7 +92,7 @@ int plugins_unload_all()
 {
 	SLL *listhead = plugins_get_list();
 	SLL *temp = listhead;
-	while (listhead->next != NULL) {
+	while (listhead != NULL) {
 		listhead = listhead->next;
 		listhead->plugin->on_unload(listhead->plugin);
 		temp = listhead;
