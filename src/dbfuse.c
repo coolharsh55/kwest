@@ -229,6 +229,7 @@ char *readdir_files(const char *path, void **ptr)
  */
 const char *get_newfile_path(const char *path)
 {
+	(void)path;
 	return NULL;
 }
 
@@ -294,7 +295,7 @@ int make_directory(const char *path, mode_t mode)
 	char *tptr = NULL;
 	char *parenttag = NULL;
 	char *t2 = NULL;
-	
+	(void)mode;
 	log_msg ("make_directory: %s",path);
 	newtag = (char *)get_entry_name(path);
 	

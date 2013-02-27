@@ -1,8 +1,6 @@
 #ifndef PLUGINS_EXTRACTION_H
 #define PLUGINS_EXTRACTION_H
 
-#define PLUGIN_TYPE char *
-
 #include <stdbool.h>
 #include "metadata_format.h"
 
@@ -17,9 +15,8 @@ struct p_linkedlist
 struct plugin_extraction_entry
 {
 	char *name;
-	PLUGIN_TYPE type;
+	char *type;
 	void *obj;
-	loadplugin *thisplugin;
 	bool (*is_of_type)(const char *);
 	int (*p_metadata_extract)(const char *, struct kw_metadata *);
 	int (*p_metadata_update)(const char *, struct kw_metadata *);
@@ -40,7 +37,5 @@ int plugins_load_all(void);
 int plugins_unload(struct plugin_extraction_entry *);
 
 int plugins_unload_all(void);
-
-int plugins_detect(void);
 
 #endif

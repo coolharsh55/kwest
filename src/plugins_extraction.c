@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <dlfcn.h>
 
 #define SLL struct p_linkedlist
 
@@ -63,7 +62,6 @@ int plugins_add_plugin(struct plugin_extraction_entry *p)
 int plugins_remove_plugin(struct plugin_extraction_entry *p)
 {
 	int ret = SLL_remove_node_with_object(p);
-	
 	return ret;
 }
 
@@ -99,31 +97,8 @@ int plugins_unload_all()
 		listhead->plugin->on_unload(listhead->plugin);
 		temp = listhead;
 		listhead = listhead->next;
-		dlclose(temp->plugin->thisplugin);
 		plugins_remove_plugin(temp->plugin);
 	}
 	
-	return KW_SUCCESS;
-}
-
-int plugins_detect()
-{
-	/*
-	void *lib = NULL;
-	char *error = NULL;
-	loadplugin plugin = NULL;
-	dlerror();
-	lib = (loadplugin *)dlopen("./kw_taglib.so", RTLD_NOW);
-	if(lib == NULL)
-        return printf("ERROR: Cannot load library\n");
-
-	plugin = dlsym(lib, "load_this_plugin");
- 	if ((error = dlerror()) != NULL)  {
-               fprintf(stderr, "%s\n", error);
-               return(-1);
-        }
-        int ret = plugins_add_plugin(plugin());
-	printf("plugin load status = %d\n", ret);
-	*/
 	return KW_SUCCESS;
 }

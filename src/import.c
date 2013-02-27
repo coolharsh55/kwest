@@ -29,7 +29,6 @@
 
 #include "import.h"
 #include "dbbasic.h"
-/*#include "extract_audio_taglib.h"*/
 #include "logging.h"
 #include "flags.h"
 #include "magicstrings.h"
@@ -75,7 +74,8 @@ static int import_semantics(const char *path,const char *dirname)
 		}
 		
 		/* Ignore files ending with ~ */
-		if((strrchr(entry->d_name,'~')-entry->d_name) == dir_len-1){
+		if((strrchr(entry->d_name,'~')-entry->d_name) == 
+		   (int)dir_len-1){
 			continue;
 		}
 		
@@ -84,25 +84,24 @@ static int import_semantics(const char *path,const char *dirname)
 			continue;
 		}
 		if (S_ISDIR(fstat.st_mode)) { /* Directory */
+		
 			if(add_tag(entry->d_name,USER_TAG) == KW_SUCCESS){
 				printf("Created Tag : %s\n",entry->d_name);
 			}
-			
 			/* Access Sub-Directories */
 			import_semantics(full_name,entry->d_name);
 			/* Tag-Tag Relation */
 			add_association(entry->d_name,dirname,
 			                ASSOC_SUBGROUP);
-			
 		} else if(S_ISREG(fstat.st_mode)) { /* Regular File */
 			if(add_file(full_name) == KW_SUCCESS){
 				printf("Added File  : %s\n",entry->d_name);
-				
 				/* Tag-File Relation */
 				tag_file(dirname,entry->d_name);
 			}
 		}
 	}
+	
 	closedir (directory);
 	return KW_SUCCESS;
 }

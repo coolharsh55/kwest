@@ -81,26 +81,7 @@ int main(int argc, char *argv[])
 	int ret = plugins_add_plugin(load_this_plugin());
 	printf("plugin load status = %d\n", ret);
 	commit_transaction();
-	/*
-	begin_transaction();
-	commit_transaction();
-	*/
-	/* add some plugins */
-	//plugins_detect();
-	/*
-	void *lib = NULL;
-	char *error = NULL;
-	loadplugin plugin = NULL;
-	dlerror();
-	lib = (loadplugin *)dlopen("./kw_taglib.so", RTLD_NOW);
-	if(lib == NULL)
-        return printf("ERROR: Cannot load library\n");
 
-	plugin = dlsym(lib, "load_this_plugin");
- 	if ((error = dlerror()) != NULL)  {
-               fprintf(stderr, "%s\n", error);
-               return(-1);
-        }*/
 	begin_transaction();	
 	printf("Importing file from %s\n",musicdir);
 	if(import(musicdir) == KW_SUCCESS) {

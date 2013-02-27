@@ -3,6 +3,8 @@
 #include "magicstrings.h"
 #include "flags.h"
 #include "dbbasic.h"
+#include "kw_taglib_update_metadata.hpp"
+#include "logging.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -12,8 +14,6 @@
 
 static bool is_of_type(const char *filepath)
 {
-	//return false;
-	printf("param:%s\n", filepath);
 	TagLib_File* file = NULL;
 	file = taglib_file_new(filepath);
 	if (file == NULL) {
@@ -32,7 +32,7 @@ static bool is_of_type(const char *filepath)
 
 static int do_on_init(void *obj)
 {
-	printf("do_on_init has %s object\n",(obj!=NULL)?"a":"no");
+	(void)obj;
 	return KW_SUCCESS;
 }
 
@@ -56,7 +56,7 @@ static int initializations(void)
 	add_association(TAG_ALBUM, TAG_AUDIO, ASSOC_SUBGROUP);
 	add_association(TAG_GENRE, TAG_AUDIO, ASSOC_SUBGROUP);
 	
-	printf("plugin taglib has added database entries\n");
+	log_msg("plugin taglib has added database entries\n");
 	return KW_SUCCESS;
 }
 
@@ -64,7 +64,6 @@ static int do_on_cleanup(struct kw_metadata *s)
 {
 	int i=0;
 	
-	printf("metadata cleanup\n");
 	if (s->type != NULL) {
 		free(s->type);
 	}
@@ -117,7 +116,6 @@ static int metadata_extract(const char *filename, struct kw_metadata *s)
 		return KW_ERROR;
 	}
 	
-	printf("extract metadata from file %s\n", filename);
 	TagLib_File* file = taglib_file_new(filename); 
 	TagLib_Tag* tag = taglib_file_tag(file);
 	
@@ -153,53 +151,39 @@ static int metadata_update(const char *filename, struct kw_metadata *s)
 	if (!is_of_type(filename)) {		
 		return KW_ERROR;
 	}
-	printf("updating file metdata\n");
-	TagLib_File* file = taglib_file_new(filename); 
-	if (file == NULL) {
-		printf("Tablig file NULL error\n");
-	}
-	TagLib_Tag* tag = taglib_file_tag(file);
-	if (tag == NULL) {
-		printf("Tablig tag NULL error\n");
-	}
-	
-	free(s->tagv[0]);
-	s->tagv[0] = strdup("test title");
-	taglib_tag_set_title(tag, s->tagv[0]);	
-	taglib_tag_free_strings();
-	taglib_file_free(file);
-	
+	taglib_cpp_update_metadata(filename, s);
 	return KW_SUCCESS;
 }
 
 static int on_load(struct plugin_extraction_entry *plugin)
 {
-	printf("plugin on load\n");
+	printf("plugin loaded\n");
 	printf("name: %s\n", plugin->name);
 	printf("type: %s\n", plugin->type);
-	printf("istype: %s\n", plugin->is_of_type("test")?"TRUE":"FALSE");
 	initializations();
 	return KW_SUCCESS;
 }
 	
 static int on_unload(struct plugin_extraction_entry *plugin)
 {
-	printf("plugin on unload\n");
-	printf("freeing name: %s\n", plugin->name);
+	log_msg("plugin on unload\n");
+	log_msg("freeing name: %s\n", plugin->name);
 	free(plugin->name);
-	printf("freeing type: %s\n", plugin->type);
+	log_msg("freeing type: %s\n", plugin->type);
+	free(plugin->type);
+	if (plugin->obj != NULL) {
+		free(plugin->obj);
+	}
 	return KW_SUCCESS;
 }
 
 struct plugin_extraction_entry *load_this_plugin()
 {
 	static struct plugin_extraction_entry *plugin = NULL;
-	printf("PLUGIN TAGLIB\n");
 	if (plugin == NULL) {
 		plugin = (struct plugin_extraction_entry *) 
 		         malloc(sizeof(struct plugin_extraction_entry));
 		plugin->name = strdup("taglib_audio");
-		printf("name : %s\n", plugin->name);
 		plugin->type = strdup("Audio");
 		plugin->obj  = NULL;
 		//plugin->thisplugin = this;

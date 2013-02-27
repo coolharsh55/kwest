@@ -168,8 +168,8 @@ int add_file(const char *abspath)
 		sqlite3_finalize(stmt);
 		return KW_FAIL;
 	}
-	sqlite3_finalize(stmt);
 	
+	sqlite3_finalize(stmt);
 	/* Get Metadata for file */
 	add_metadata_file(fno,abspath,fname);
 	
@@ -217,6 +217,7 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	*/
 	/*strcpy(query,"insert into Audio values"
 	             "(:fno,:title,:artist,:album,:genre);");*/
+	
 	status = metadata_extract(abspath, &kw_M);
 	if(status == KW_FAIL) {
 		return KW_ERROR;
@@ -393,16 +394,15 @@ int tag_file(const char *t,const char *f)
 	char query[QUERY_SIZE];
 	int status;
 	int fno,tno;
-	
 	fno = get_file_id(f); /* Get File ID */
 	if(fno == KW_FAIL){ /* Return if File not found */
-		printf("tag_file : %s%s",ERR_FILE_NOT_FOUND,f);
+		log_msg("tag_file : %s%s",ERR_FILE_NOT_FOUND,f);
 		return KW_ERROR;
 	}
 	
 	tno = get_tag_id(t); /* Get Tag ID */
 	if(tno == KW_FAIL){ /* Return if Tag not found */
-		printf("tag_file : %s%s",ERR_TAG_NOT_FOUND,t);
+		log_msg("tag_file : %s%s",ERR_TAG_NOT_FOUND,t);
 		return KW_ERROR;
 	}
 	
@@ -543,7 +543,7 @@ sqlite3_stmt *get_tags_for_file(const char *f)
 	
 	fno = get_file_id(f); /* Get File ID */
 	if(fno == KW_FAIL){ /* Return if File not found */
-		printf("get_tags_for_file : %s%s",ERR_FILE_NOT_FOUND,f);
+		log_msg("get_tags_for_file : %s%s",ERR_FILE_NOT_FOUND,f);
 		return NULL;
 	}
 	
@@ -575,7 +575,6 @@ int add_association(const char *t1,const char *t2,int associationid)
 	char query[QUERY_SIZE];
 	int status;
 	int t1_id,t2_id;
-	
 	/* Return if relation Undefined */
 	if(is_association_type(associationid) == 0){ 
 		log_msg("add_association : %s%d",ERR_REL_NOT_DEF,associationid);
@@ -626,20 +625,20 @@ int remove_association(const char *t1,const char *t2,int associationid)
 	
 	/* Return if relation Undefined */
 	if(is_association_type(associationid) == 0){ 
-		printf("remove_association : %s%d",ERR_REL_NOT_DEF,
+		log_msg("remove_association : %s%d",ERR_REL_NOT_DEF,
 		       associationid);
 		return KW_ERROR;
 	}
 	
 	t1_id = get_tag_id(t1); /* Get Tag ID for tag t1*/
 	if(t1_id == KW_FAIL){ /* Return if Tag not found */
-		printf("remove_association : %s%s",ERR_TAG_NOT_FOUND,t1);
+		log_msg("remove_association : %s%s",ERR_TAG_NOT_FOUND,t1);
 		return KW_ERROR;
 	}
 	
 	t2_id = get_tag_id(t2); /* Get Tag ID for tag t2*/
 	if(t2_id == KW_FAIL){ /* Return if Tag not found */
-		printf("remove_association : %s%s",ERR_TAG_NOT_FOUND,t2);
+		log_msg("remove_association : %s%s",ERR_TAG_NOT_FOUND,t2);
 		return KW_ERROR;
 	}
 	
