@@ -1,0 +1,61 @@
+kwest : kwest_main.o fusefunc.o dbfuse.o logging.o dbbasic.o dbinit.o dbkey.o import.o plugins_extraction.o metadata_extract.o lib_kw_plugin
+	gcc -o kwest kwest_main.o fusefunc.o dbfuse.o logging.o dbbasic.o dbinit.o dbkey.o import.o plugins_extraction.o metadata_extract.o -lfuse -lsqlite3 -lkw_taglib -L. -ltag_c
+ 
+kwest_main.o : kwest_main.c
+	gcc -c -Wall -std=gnu99 kwest_main.c -D_FILE_OFFSET_BITS=64 -lfuse
+fusefunc.o: fusefunc.c
+	gcc -c -Wall -std=gnu99 fusefunc.c -D_FILE_OFFSET_BITS=64 -lfuse
+import.o : import.c
+	gcc -c -Wall -std=gnu99 import.c -lsqlite3
+extract_audio_taglib.o : extract_audio_taglib.c
+	gcc -c -Wall -std=gnu99 extract_audio_taglib.c -ltag_c
+dbbasic.o: dbbasic.c
+	gcc -c -Wall -std=gnu99 dbbasic.c -lsqlite3
+dbinit.o: dbinit.c
+	gcc -c -Wall -std=gnu99 dbinit.c -lsqlite3
+dbkey.o: dbkey.c
+	gcc -c -Wall -std=gnu99 dbkey.c -lsqlite3
+extract_metadata.o: extract_metadata.c
+	gcc -c -Wall -std=gnu99 extract_metadata.c -lsqlite3
+logging.o: logging.c
+	gcc -c -Wall -std=gnu99 logging.c
+dbfuse.o: dbfuse.c
+	gcc -c -Wall -std=gnu99 dbfuse.c 
+
+test: test.o plugins_extraction.o metadata_extract.o plugin_taglib.o
+	gcc -o test -std=gnu99 test.o plugins_extraction.o metadata_extract.o plugin_taglib.o -ltag_c
+
+test.o: test.c
+	gcc -c -Wall -Wextra -pedantic -std=gnu99 test.c
+
+plugins_extraction.o : plugins_extraction.c
+	gcc -c -Wall -Wextra -pedantic -std=gnu99 plugins_extraction.c
+
+metadata_extract.o : metadata_extract.c
+	gcc -c -Wall -Wextra -pedantic -std=gnu99 metadata_extract.c
+
+lib_kw_taglib: plugin_taglib.o link_kw_taglib
+
+plugin_taglib.o : plugin_taglib.c
+	gcc -c -Wall -Wextra -pedantic -std=gnu99 -fPIC -ltag_c -c plugin_taglib.c
+
+lib_kw_plugin: lib_kw_taglib
+
+link_kw_taglib:
+	 gcc -shared -Wl,-soname,libkw_taglib.so -o libkw_taglib.so -ltag_c plugin_taglib.o
+
+cleantest:
+	rm -rf *.o
+	rm -rf test
+
+clean:
+	rm -rf *.o
+	rm -rf *.db
+	rm -rf kwest
+	
+cleanall:
+	rm -rf *.o
+	rm -rf *.db
+	rm -rf kwest
+	rm -rf ~/.config/kwest/
+

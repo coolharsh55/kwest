@@ -25,6 +25,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 #include "fusefunc.h"
 #include "dbinit.h"
@@ -34,6 +35,10 @@
 #include "logging.h"
 #include "flags.h"
 #include "magicstrings.h"
+
+#include "plugins_extraction.h"
+#include "plugin_taglib.h"
+
 
 
 /**
@@ -72,9 +77,31 @@ int main(int argc, char *argv[])
 	}
 	begin_transaction();
 	create_db();
-	
-	audio_metadata();
-	
+	/*audio_metadata();*/
+	int ret = plugins_add_plugin(load_this_plugin());
+	printf("plugin load status = %d\n", ret);
+	commit_transaction();
+	/*
+	begin_transaction();
+	commit_transaction();
+	*/
+	/* add some plugins */
+	//plugins_detect();
+	/*
+	void *lib = NULL;
+	char *error = NULL;
+	loadplugin plugin = NULL;
+	dlerror();
+	lib = (loadplugin *)dlopen("./kw_taglib.so", RTLD_NOW);
+	if(lib == NULL)
+        return printf("ERROR: Cannot load library\n");
+
+	plugin = dlsym(lib, "load_this_plugin");
+ 	if ((error = dlerror()) != NULL)  {
+               fprintf(stderr, "%s\n", error);
+               return(-1);
+        }*/
+	begin_transaction();	
 	printf("Importing file from %s\n",musicdir);
 	if(import(musicdir) == KW_SUCCESS) {
 		log_msg("Importing files = SUCCESS");
@@ -84,9 +111,9 @@ int main(int argc, char *argv[])
 		printf("FAILED");
 		printf("Exiting program...\n");
 		return -1;
-	}
-	
+	}	
 	commit_transaction();
+	
 	if(stderror != NULL) { /* restore stderr to stdout */
 		stderr = stderror;
 	}

@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include "metadata_format.h"
 
+typedef struct plugin_extraction_entry *(*loadplugin)(void);
+
 struct p_linkedlist
 {
 	struct plugin_extraction_entry *plugin;
@@ -17,9 +19,10 @@ struct plugin_extraction_entry
 	char *name;
 	PLUGIN_TYPE type;
 	void *obj;
-	bool (*is_of_type)(char *);
-	int (*p_metadata_extract)(char *, struct kw_metadata *);
-	int (*p_metadata_update)(char *, struct kw_metadata *);
+	loadplugin *thisplugin;
+	bool (*is_of_type)(const char *);
+	int (*p_metadata_extract)(const char *, struct kw_metadata *);
+	int (*p_metadata_update)(const char *, struct kw_metadata *);
 	int (*on_load)(struct plugin_extraction_entry *);
 	int (*on_unload)(struct plugin_extraction_entry *);
 };
@@ -35,5 +38,9 @@ int plugins_load(struct plugin_extraction_entry *);
 int plugins_load_all(void);
 
 int plugins_unload(struct plugin_extraction_entry *);
+
+int plugins_unload_all(void);
+
+int plugins_detect(void);
 
 #endif

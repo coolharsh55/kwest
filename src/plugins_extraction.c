@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <dlfcn.h>
 
 #define SLL struct p_linkedlist
 
@@ -54,7 +56,7 @@ static int SLL_remove_node_with_object(void *p)
 int plugins_add_plugin(struct plugin_extraction_entry *p)
 {
 	int ret = SLL_insert_node_with_object(p);
-	
+	p->on_load(p);
 	return ret;
 }
 
@@ -70,11 +72,6 @@ int plugins_load(struct plugin_extraction_entry *p)
 	return p->on_load(p);
 }
 
-int plugins_unload(struct plugin_extraction_entry *p)
-{
-	return p->on_unload(p);
-}
-
 int plugins_load_all()
 {
 	SLL *listhead = plugins_get_list();
@@ -84,5 +81,49 @@ int plugins_load_all()
 		listhead = listhead ->next;
 	}
 	
+	return KW_SUCCESS;
+}
+
+
+int plugins_unload(struct plugin_extraction_entry *p)
+{
+	return p->on_unload(p);
+}
+
+int plugins_unload_all()
+{
+	SLL *listhead = plugins_get_list();
+	SLL *temp = listhead;
+	while (listhead->next != NULL) {
+		listhead = listhead->next;
+		listhead->plugin->on_unload(listhead->plugin);
+		temp = listhead;
+		listhead = listhead->next;
+		dlclose(temp->plugin->thisplugin);
+		plugins_remove_plugin(temp->plugin);
+	}
+	
+	return KW_SUCCESS;
+}
+
+int plugins_detect()
+{
+	/*
+	void *lib = NULL;
+	char *error = NULL;
+	loadplugin plugin = NULL;
+	dlerror();
+	lib = (loadplugin *)dlopen("./kw_taglib.so", RTLD_NOW);
+	if(lib == NULL)
+        return printf("ERROR: Cannot load library\n");
+
+	plugin = dlsym(lib, "load_this_plugin");
+ 	if ((error = dlerror()) != NULL)  {
+               fprintf(stderr, "%s\n", error);
+               return(-1);
+        }
+        int ret = plugins_add_plugin(plugin());
+	printf("plugin load status = %d\n", ret);
+	*/
 	return KW_SUCCESS;
 }

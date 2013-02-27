@@ -37,6 +37,7 @@
 #include "flags.h"
 #include "fusefilefunc.c"
 #include "fusedirfunc.c"
+#include "plugins_extraction.h"
 
 
 /**

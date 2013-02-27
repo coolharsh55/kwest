@@ -7,6 +7,7 @@
 
 #include <string.h>
 
-int metadata_extract(char *, struct kw_metadata *);
+int metadata_extract(const char *, struct kw_metadata *);
+int metadata_update(const char *, struct kw_metadata *);
 
 #endif
