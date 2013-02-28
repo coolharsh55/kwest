@@ -4,16 +4,16 @@
  * @author Sahil Gupta
  * @date December 2012
  */
- 
+
 /* LICENSE
  * Copyright 2013 Sahil Gupta
  * Licensed under the Apache License, Version 2.0 (the "License");
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * 	http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, 
+ *
+ * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -45,31 +45,31 @@
 sqlite3 *get_kwdb(void)
 {
 	static sqlite3 *db = NULL;
-	
+
 	if(db == NULL){
 		int status;
 		struct passwd *pw;
 		const char *homedir;
 		char kwestdir[QUERY_SIZE];
-		
+
 		/* Set path for database file to /home/user/.config */
 		pw = getpwuid(getuid());
 		homedir = pw->pw_dir; /* initial working directory */
 		strcpy(kwestdir,strcat((char *)homedir,CONFIG_LOCATION));
-		
+
 		if(mkdir(kwestdir, KW_STDIR) == -1 && errno != EEXIST) {
 			return NULL;
-		} 
-		
+		}
+
 		strcat(kwestdir, DATABASE_NAME);
 		status = sqlite3_open(kwestdir,&db);
-		
+
 		if(status != SQLITE_OK) {
 			log_msg("%s",ERR_DB_CONN);
 			return NULL;
 		}
 	}
-	
+
 	return db;
 }
 
@@ -112,6 +112,10 @@ int create_db(void)
 	"(associationid integer primary key,associationtype text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
+	strcpy(query,"create table if not exists AssociationRules "
+	"(tag1 text,tag2 text);");
+	status = sqlite3_exec(get_kwdb(),query,0,0,0);
+
 	/* Possible Tag-Tag Relations */
 	add_association_type(ASSOC_SYSTEM);
 	add_association_type(ASSOC_PROBAB);
@@ -122,7 +126,7 @@ int create_db(void)
 	add_tag(TAG_ROOT, SYSTEM_TAG);
 	add_tag(TAG_FILES, SYSTEM_TAG);
 	add_association(TAG_FILES, TAG_ROOT, ASSOC_SUBGROUP);
-	
+
 	return status;
 }
 
@@ -138,7 +142,7 @@ int close_db(void)
 
 	status = sqlite3_close(get_kwdb());
 
-	if (status != SQLITE_OK) {  
+	if (status != SQLITE_OK) {
 		log_msg("%s", ERR_DB_CLOSE);
 	} else {
 		log_msg("%s", SUC_DB_CLOSE);
@@ -147,7 +151,7 @@ int close_db(void)
 	return status;
 }
 
-/** 
+/**
  * @brief Begin transaction
  * @param void
  * @return KW_SUCCESS : SUCCESS
@@ -165,6 +169,6 @@ int begin_transaction(void)
  * @author SG
  */
 int commit_transaction(void)
-{	
-	return (int)sqlite3_exec(get_kwdb(),"COMMIT",0,0,0); 
+{
+	return (int)sqlite3_exec(get_kwdb(),"COMMIT",0,0,0);
 }
