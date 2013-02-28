@@ -1,6 +1,7 @@
 **2013 Feb 28**
 fixed memory leaks in formatting strings in metadata
 fixed memory leaks in freeind metadata structures
+add apriori implementation for file suggestion
 
 **2013 Feb 27**
 fixed memory leaks on filesystem umount
