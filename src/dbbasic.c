@@ -1188,7 +1188,7 @@ static int check_itemset(char *itemset, char *main_itemset, int maincnt)
 static void correct_items(char **itemset, int *cnt, char *reference, int refcnt)
 {
 	int i;
-	char *tmpset = (char *)malloc(strlen(*itemset) * sizeof(char));
+	char *tmpset = (char *)malloc(1024 * sizeof(char));
 	int tmpcnt;
 	char *token;
 
@@ -1198,7 +1198,7 @@ static void correct_items(char **itemset, int *cnt, char *reference, int refcnt)
 	for(i = 0; i < *cnt; i++) {
 		token = get_token(*itemset, i, CHAR_ITEM_SEP);
 		if(check_item(reference, token, refcnt, CHAR_ITEM_SEP) == 0) {
-			strcat(tmpset, token);
+			strcat(tmpset, get_file_name(atoi(token)));
 			strcat(tmpset, STR_ITEM_SEP);
 			tmpcnt++;
 		}
@@ -1233,7 +1233,7 @@ char *get_file_suggestions(char *tagname)
 	suggestcnt = 0;
 
 	filecnt = get_fid_str_under_tag(tagname, &tag_files);
-	log_msg("Tag : %s #%d Files : %s", tagname, filecnt, tag_files);
+	//log_msg("Tag : %s #%d Files : %s", tagname, filecnt, tag_files);
 
 	/* analyze all association rules */
 	sprintf(query,"select tag1,tag2 from AssociationRules");
@@ -1278,13 +1278,28 @@ char *get_file_suggestions(char *tagname)
 
 	suggest[strlen(suggest) - 1] = '\0';
 	correct_items(&suggest, &suggestcnt, tag_files, filecnt);
-	log_msg("%s",suggest);
-
-	free((char *) suggest);
+	//log_msg("%s",suggest);
+	if(strcmp(suggest,"") == 0) return NULL;
+	//free((char *) suggest);
 	free((char *) tag_files);
-	return NULL;
+	return suggest;
 }
 
+/*char *get_suggestions(char *tagname)
+{
+	char *suggest;
+	char *token;
+	suggest = get_file_suggestions(taganame);
+
+	int cnt = get_no_of_items(suggest);
+
+	for(int i=0;i<cnt;i++)
+	{
+
+	}
+
+}
+*/
 /**
  * @brief Finalize sqlite statement
  * @param stmt sqlite3 statement pointer

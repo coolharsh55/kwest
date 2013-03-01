@@ -77,6 +77,9 @@ char *get_token(char *source_str ,int tokenno, char separator)
 	j = 0;
 	cur = 0;
 
+	if(source_str == NULL) return NULL;
+	strcpy(token,"");
+
 	for(i = 0 ; source_str[i] != '\0' && cur <= tokenno ; i++) {
 		if(source_str[i] == separator) {
 			cur++;
@@ -854,7 +857,7 @@ void apriori(void)
 
 	}while (candidate_cnt > 1);
 	/* If there are <=1 frequent items, then its the end */
-
+	//get_file_suggestions("MyBest");
 	free_itemsets();
 	log_msg("\nTerminating Apriori Algorithm\n");
 }
