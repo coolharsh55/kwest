@@ -279,12 +279,18 @@ int associate_file_metadata(const char *metatype,const char *tagname,
                             const char *fname)
 {
 	char *newtag=NULL;
+	int taglength = 0;
 	
 	if( (strcmp(tagname,"") == 0) || /* No meta information */ 
 	    (strcmp(metatype,tagname)==0) ||
 	    (strcmp(metatype,TAG_UNKNOWN)==0) ){ 
-		newtag=strdup(TAG_UNKNOWN);
-		newtag=strcat(strcat(newtag," "),metatype);
+		/*newtag=strdup(TAG_UNKNOWN);*/
+		taglength = strlen(TAG_UNKNOWN) + strlen(metatype) + 2;
+		newtag = (char *)malloc(taglength * sizeof(char));
+		newtag = strcpy(newtag, TAG_UNKNOWN);
+		newtag = strcat(newtag, " ");
+		newtag = strcat(newtag, metatype);
+		/*newtag=strcat(strcat(newtag," "),metatype);*/
 		/* Create Tag Unknown */
 		add_tag(newtag,SYSTEM_TAG); 
 		/* Associate Tag Unknown with File Type*/

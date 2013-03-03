@@ -19,6 +19,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
+ /*
+  valgrind --tool=memcheck --trace-children=no --leak-check=full --track-origins=yes -v ./kwest mnt -d -f -s
+   $ cd /usr/bin
+   $ if [[ -e fusermount ]]; then mv fusermount fusermount.real; fi
+   $ touch fusermount
+   $ chown root.fuse fusermount
+   $ chmod ug+x fusermount
+   $ echo '#!/bin/sh' >> fusermount
+   $ echo 'exec /usr/bin/fusermount.real $@' >> fusermount
+   or depending on the path of fusermount
+   $ echo 'exec /bin/fusermount $@' >> fusermount
+  */
 
 #include <stdio.h>
 #include <stdlib.h>
