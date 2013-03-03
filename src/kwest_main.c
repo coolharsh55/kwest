@@ -25,12 +25,12 @@
 #include <string.h>
 #include <pwd.h>
 #include <unistd.h>
-#include <dlfcn.h>
+/*#include <dlfcn.h>*/
 
 #include "fusefunc.h"
 #include "dbinit.h"
 #include "import.h"
-#include "extract_metadata.h"
+/*#include "extract_metadata.h"*/
 /* #include "db_consistency.h" */
 #include "logging.h"
 #include "flags.h"
