@@ -3,9 +3,13 @@ Corrected Makefile
 Deleted branch - generalize_metadata
 removed deprecated headers
 
+**2013 Mar 01**
+Apriori Implementation: Show file suggestions while browsing
+
 **2013 Feb 28**
 fixed memory leaks in formatting strings in metadata
 fixed memory leaks in freeind metadata structures
+add apriori implementation for file suggestion
 
 **2013 Feb 27**
 fixed memory leaks on filesystem umount

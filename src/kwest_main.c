@@ -81,6 +81,7 @@ taglib 1.7+
 
 #include "fusefunc.h"
 #include "dbinit.h"
+#include "apriori.h"
 #include "import.h"
 #include "logging.h"
 #include "flags.h"
@@ -113,7 +114,7 @@ int main(int argc, char *argv[])
 	strcpy(logdir, homedir);
 	strcat(logdir, CONFIG_LOCATION);
 	strcat(logdir, LOGFILE_STORAGE);
-	
+
 	printf("KWEST - A Semantically Tagged Virtual File System\n");
 	printf("Initiating logging file(s).........\n");
 	/** initialize logging mechanism */
@@ -125,7 +126,7 @@ int main(int argc, char *argv[])
 		log_msg("KWEST - A Semantically Tagged Virtual File System");
 		log_msg("program initiated");
 		printf("SUCCESS!\n");
-		
+
 	} else {
 		printf("FAILED\n");
 		printf("Exiting program...\n");
@@ -150,6 +151,7 @@ int main(int argc, char *argv[])
 		printf("Exiting program...\n");
 		return -1;
 	}	
+	apriori();
 	commit_transaction();
 	/** restore stderr to default */
 	if(stderror != NULL) { /* restore stderr to stdout */

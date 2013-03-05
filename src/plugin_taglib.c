@@ -73,7 +73,7 @@ static int do_on_cleanup(struct kw_metadata *s)
 		associate_file_metadata(TAG_ALBUM,s->tagv[2],s->obj);
 		associate_file_metadata(TAG_GENRE,s->tagv[3],s->obj);
 	}
-	/*
+	
 	for(i=0 ; i<s->tagc ; i++) {
 		memchar = s->tagtype[i];
 		if (memchar != NULL) {
@@ -84,7 +84,8 @@ static int do_on_cleanup(struct kw_metadata *s)
 			free(memchar);
 		}
 	}
-	*/
+	
+	/*
 	free(s->tagtype[0]);
 	free(s->tagv[0]);
 	free(s->tagtype[1]);
@@ -93,6 +94,7 @@ static int do_on_cleanup(struct kw_metadata *s)
 	free(s->tagv[2]);
 	free(s->tagtype[3]);
 	free(s->tagv[3]);
+	*/
 	free(s->tagtype);
 	free(s->tagv);
 	return KW_SUCCESS;

@@ -10,10 +10,10 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * 	http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, 
+ *
+ * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -29,13 +29,13 @@
 
 /* ---------------- ADD/REMOVE -------------------- */
 
-/* 
+/*
  * Create a new tag in kwest
  */
 int add_tag(const char *tagname,int tagtype);
 
 /*
- * Remove an existing tag from kwest 
+ * Remove an existing tag from kwest
  */
 int remove_tag(const char *tagname);
 
@@ -45,19 +45,19 @@ int remove_tag(const char *tagname);
 int add_file(const char *abspath);
 
 /*
- * Remove file form kwest 
+ * Remove file form kwest
  */
 int remove_file(const char *path);
 
 /*
- * Add new category to identify metadata 
+ * Add new category to identify metadata
  */
 int add_meta_info(const char *filetype,const char *tag);
 
 /* --------------- Tag-File Relation ------------- */
 
 /*
- * Associate a tag with a file 
+ * Associate a tag with a file
  */
 int tag_file(const char *t,const char *f);
 
@@ -67,9 +67,14 @@ int tag_file(const char *t,const char *f);
 int untag_file(const char *t,const char *f);
 
 /*
- * Return list of files associated to given tag 
+ * Return list of files associated to given tag
  */
 sqlite3_stmt *get_fname_under_tag(const char *t);
+
+/*
+ * Return list of files associated to given tag
+ */
+sqlite3_stmt *get_fid_under_tag(const char *t);
 
 /*
  * Return list of tags associated with a given file
@@ -80,12 +85,12 @@ sqlite3_stmt *get_tags_for_file(const char *f);
 /*----------------- Tag-Tag Relation ------------------*/
 
 /*
- * Associate a tag with another tag 
+ * Associate a tag with another tag
  */
 int add_association(const char *t1,const char *t2,int associationid);
 
 /*
- * Remove the existing association between tags 
+ * Remove the existing association between tags
  */
 int remove_association(const char *t1,const char *t2,int associationid);
 
@@ -95,14 +100,14 @@ int remove_association(const char *t1,const char *t2,int associationid);
 int get_association(const char *t1,const char *t2);
 
 /*
- * Get tag having particular association with other tag 
+ * Get tag having particular association with other tag
  */
 sqlite3_stmt* get_tags_by_association(const char *t,int associationid);
 
 /* ----------------- Associations --------------------- */
 
 /*
- * Create a new association type 
+ * Create a new association type
  */
 int add_association_type(const char *associationtype);
 
@@ -114,9 +119,9 @@ int is_association_type(int associationid);
 /* --------------------- Others --------------------- */
 
 /*
- * List all tags in the system 
+ * Get all tags in kwest
  */
-sqlite3_stmt *list_user_tags(void);
+sqlite3_stmt *get_all_tno(void);
 
 /*
  * Returns data for multiple rows in query
@@ -144,6 +149,38 @@ char *get_abspath_by_fname(const char *fname);
  * Rename file existing in kwest
  */
 int rename_file(const char *from, const char *to);
+
+/* -------------------- Apriori Functions --------------------- */
+
+/*
+ * Count of all user created tags in kwest
+ */
+int count_user_tags(void);
+
+/*
+ * List all user tags in the system
+ */
+sqlite3_stmt *get_user_tagname(void);
+
+/*
+ * Get fno of user tagged files
+ */
+sqlite3_stmt *get_user_tagged_files(void);
+
+/*
+ * Get fno of user tagged files
+ */
+int add_rule(char *para1, char *para2);
+
+/*
+ * Get file suggestions using apriori association rules
+ */
+char *get_file_suggestions(char *tagname);
+
+/*
+ * Finalize sqlite statement
+ */
+void finalize(sqlite3_stmt * stmt);
 
 int associate_file_metadata(const char *metatype,const char *tagname,
                             const char *fname);
