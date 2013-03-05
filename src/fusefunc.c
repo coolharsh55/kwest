@@ -114,6 +114,8 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi)
 {
+	(void)offset;
+	(void)fi;
 	const char *direntry = NULL;
 	char *suggest = NULL;
 	char buffer[QUERY_SIZE];
@@ -250,6 +252,7 @@ static int kwest_access(const char *path, int mask)
  */
 void kwest_destroy(void *private_data)
 {
+	(void)private_data;
 	log_msg("filesytem is being unmounted...");
 	close_db();
 	log_close();
@@ -344,6 +347,7 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
  */
 static int kwest_release(const char *path, struct fuse_file_info *fi)
 {
+	(void)fi;
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
 	log_msg("release: %s",path);
@@ -451,6 +455,7 @@ static int kwest_unlink(const char *path)
 static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
+	(void)fi;
 	int fd = 0;
 	int res = 0;
 	const char *abspath = NULL;
@@ -498,6 +503,7 @@ static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 static int kwest_write(const char *path, const char *buf, size_t size,
                        off_t offset, struct fuse_file_info *fi)
 {
+	(void)fi;
 	int fd = 0;
 	int res = 0;
 	const char *abspath = NULL;
