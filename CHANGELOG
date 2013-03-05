@@ -1,3 +1,8 @@
+**2013 Mar 02**
+Corrected Makefile
+Deleted branch - generalize_metadata
+removed deprecated headers
+
 **2013 Mar 01**
 Apriori Implementation: Show file suggestions while browsing
 

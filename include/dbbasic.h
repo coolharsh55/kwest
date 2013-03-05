@@ -2,7 +2,7 @@
  * @file dbbasic.h
  * @brief basic interation with database
  * @author Sahil Gupta
- * @date December 2012
+ * @date March 2013
  */
 
 /* LICENSE
@@ -181,5 +181,8 @@ char *get_file_suggestions(char *tagname);
  * Finalize sqlite statement
  */
 void finalize(sqlite3_stmt * stmt);
+
+int associate_file_metadata(const char *metatype,const char *tagname,
+                            const char *fname);
 
 #endif
