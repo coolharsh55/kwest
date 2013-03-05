@@ -2,7 +2,7 @@
  * @file dbbasic.c
  * @brief basic interation with database
  * @author Sahil Gupta
- * @date December 2012
+ * @date March 2013
  */
 
 /* LICENSE
@@ -28,7 +28,6 @@
 #include "dbbasic.h"
 #include "dbinit.h"
 #include "dbkey.h"
-/*#include "extract_audio_taglib.h"*/
 #include "logging.h"
 #include "flags.h"
 #include "magicstrings.h"
@@ -51,11 +50,15 @@ static int add_metadata_file(int fno,const char *abspath,char *fname);
 /* ---------------- ADD/REMOVE -------------------- */
 
 /**
+ * @fn int add_tag(const char *tagname,int tagtype)
  * @brief Create a new user tag in kwest 
- * @param tagname
- * @param tagtype - systemtag / usertag
- * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @param tagname name of the tag
+ * @param tagtype systemtag / usertag
+ * @return KW_SUCCESS on SUCCESS
+ * @return KW_FAIL on FAIL
+ * @return KW_ERROR on ERROR
  * @author SG
+ * @see add_association
  */
 int add_tag(const char *tagname,int tagtype)
 {

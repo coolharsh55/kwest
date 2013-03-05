@@ -2,7 +2,7 @@
  * @file dbbasic.h
  * @brief basic interation with database
  * @author Sahil Gupta
- * @date December 2012
+ * @date March 2013
  */
 
 /* LICENSE

@@ -1,3 +1,8 @@
+**2013 Mar 02**
+Corrected Makefile
+Deleted branch - generalize_metadata
+removed deprecated headers
+
 **2013 Feb 28**
 fixed memory leaks in formatting strings in metadata
 fixed memory leaks in freeind metadata structures
