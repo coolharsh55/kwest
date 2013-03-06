@@ -6,7 +6,7 @@
  */
  
  /** @mainpage 
-  * \tableofcontents
+ * @tableofcontents
  * @section license LICENSE
  * Copyright 2013 Harshvardhan Pandit
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,7 +94,7 @@ taglib 1.7+
 
 /**
  * @brief kwest main function
- * @author HP
+ * @author Harshvardhan Pandit
  * @param argc argument count
  * @param argv argument variables
  * @return int fuse return value

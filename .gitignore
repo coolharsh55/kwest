@@ -35,11 +35,13 @@
 .DS_Store
 .DS_Store?
 ._*
+.fuse_*
 .Spotlight-V100
 .Trashes
 Icon?
 ehthumbs.db
 Thumbs.db
+
 
 # Doxygen Documentation #
 #########################

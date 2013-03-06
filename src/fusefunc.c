@@ -2,7 +2,7 @@
  * @file fusefunc.c
  * @brief fuse functions implementations
  * @author Harshvardhan Pandit
- * @date December 2012
+ * @date March 2013
  */
 
 /* LICENSE
@@ -39,25 +39,31 @@
 
 
 /**
+ * @fn static int kwest_getattr(const char *path, struct stat *stbuf)
  * @brief get attributes for corresponding entry
- * @param path
- * @param stbuf: stat buffer pointer
- * @return 0: SUCCESS, -ENOENT: no_entry, -EIO: IOerror, -EACCES: no_acces
- * @author HP
+ * @param path file system path
+ * @param stbuf stat buffer pointer
+ * @note path is absolute to the file system
+ * @return 0 on SUCCESS
+ * @return -ENOENT on no_entry
+ * @return -EIO on IOerror
+ * @return -EACCES: no_acces
+ * @author Harshvardhan Pandit
+ * @see kwest_readdir
+ * @ee kwest_access
  */
 static int kwest_getattr(const char *path, struct stat *stbuf)
 {
 	const char *abspath = NULL;
 	log_msg("getattribute: %s",path);
-
+	/** check if path is root */
 	if(_is_path_root(path) == true) {
 		log_msg("PATH IS ROOT");
 		stbuf->st_mode= S_IFDIR | KW_STDIR;
 		stbuf->st_nlink=1;
 		return 0;
 	}
-
-	//char *tmp=strdup(path);
+	/** check is path is a virtual suggestion */
 	char *pre;
 	if(strlen(path)>10) {
 		pre = strdup(strrchr(path,'/'));
@@ -69,18 +75,18 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 		}
 		free(pre);
 	}
-	//free(tmp);
-
+	/** check if path is valid for kwest */
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-
+	/** check if path is for a directory */
 	if(path_is_dir(path) == true) {
 		log_msg("PATH IS DIR");
 		stbuf->st_mode= S_IFDIR | KW_STDIR;
 		stbuf->st_nlink=1;
 		return 0;
+	/** check if path is for a file */
 	} else if(path_is_file(path) == true) {
 		log_msg("PATH IS FILE");
 		abspath=get_absolute_path(path);
@@ -102,14 +108,20 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 }
 
 /**
+ * @fn static int kwest_readdir(const char *path, void *buf, 
+ *            fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
  * @brief list sub-directories and files
- * @param path
- * @param buf: buffer to store directory entries
- * @param filler: function to fill buffer with entry
- * @param offset: offset for last entry
- * @param fi: fuse struct for file info
- * @return 0: SUCCESS, -ENOENT: no_entry, -EIO: IOerror, -EACCES: no_acces
- * @author HP
+ * @param path path file system path
+ * @param buf buffer to store directory entries
+ * @param filler function to fill buffer with entry
+ * @param offset offset for last entry
+ * @param fi fuse struct for file info
+ * @note path is relative to file system
+ * @return 0 on  SUCCESS
+ * @return -ENOENT on no_entry
+ * @return -EIO on IOerror
+ * @return -EACCES on no_acces
+ * @author Harshvardhan Pandit
  */
 static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi)
@@ -123,14 +135,25 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	struct stat st;
 	log_msg("readdir: %s",path);
 
+	/** @todo
+	 * check_path_validity(path)
+	 * that recognises a valid kwest path
+	 */
+	 
 	/*
 	if(check_path_validity(path) != KW_SUCCESS) {
 		return -ENOENT;
 	}
 	*/
+	
+	/** @note FILLER fuse provides a buffer which is supposed to be 
+	 * filled with entries (listings) for the current readdir command
+	 * the function filler is provided by fuse
+	 */ 
 	memset(&st, 0, sizeof(st));
 	st.st_mode = S_IFDIR | KW_STDIR;
 
+	/** get directories under current path */
 	while((direntry = readdir_dirs(path, &ptr)) != NULL) {
 		if (filler(buf, direntry, &st, 0) == 1) {
 			break;
@@ -140,21 +163,17 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	direntry = NULL; ptr = NULL;
 	memset(&st, 0, sizeof(st));
 	st.st_mode = S_IFREG | KW_STFIL;
-
+	/** get files under current path */
 	while((direntry = readdir_files(path, &ptr)) != NULL) {
 		if (filler(buf, direntry, &st, 0) == 1) {
 			break;
 		}
 	}
-
-	//log_msg("TAGS : %s",strrchr(path,'/') + 1);
+	/** get suggestions under current path */
 	suggest = get_file_suggestions(strrchr(path,'/') + 1);
-
 	if (suggest != NULL) {
 		int i =0;
 		char *entry = NULL;
-
-
 		do {
 			entry = get_token(suggest,i,',');
 			if (strcmp(entry,"") == 0) {
@@ -167,43 +186,23 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			i++;
 		} while(entry != NULL);
 	} else {
-		//filler(buf, "NULL", &st, 0);
 		log_msg("SUGGEST NULL");
 	}
-/*
-	char *entry = suggest;
-	char *putstring = NULL;
-
-	do {
-		strcpy(buffer, "SUGGESTED - ");
-		int i =12;
-		putstring = entry;
-		entry = strchr(suggest, ',');
-		if (entry == NULL) {
-			filler(buf, "NULL", &st, 0);
-			break;
-		}
-		do {
-			buffer[i++] = *putstring;
-			putstring++;
-		} while(putstring != entry);
-		buffer[i] = '\0';
-		filler(buf, buffer, &st, 0);
-		entry++;
-
-	} while (entry != NULL); */
-	//filler(buf,suggest, &st, 0);
 
 	return 0;
 }
 
 
 /**
+ * @fn static int kwest_access(const char *path, int mask)
  * @brief checks if access is valid
- * @param path
- * @param mask
- * @return 0: SUCCESS, -ENOENT: no_entry, -EIO: IOerror, -EACCES: no_acces
- * @author HP
+ * @param path path of file system
+ * @param mask masking mode
+ * @return 0 on SUCCESS
+ * @return -ENOENT on no_entry
+ * @return -EIO on IOerror
+ * @return -EACCES on no_access
+ * @author Harshvardhan Pandit
  */
 static int kwest_access(const char *path, int mask)
 {
@@ -211,8 +210,14 @@ static int kwest_access(const char *path, int mask)
 	const char *abspath = NULL;
 	log_msg("access: %s",path);
 
+	/** @todo
+	 * kwest_access: check proper access rights
+	 */
+	 
+	/** @warning
+	 * temporary return 0
+	 */
 	return 0;
-	/* for time being */
 
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
@@ -223,8 +228,6 @@ static int kwest_access(const char *path, int mask)
 	}
 
 	if(strstr(path, "SUGGESTED - ") == path) {
-		//stbuf->st_mode= S_IFDIR | KW_STDIR;
-		//stbuf->st_nlink=1;
 		return 0;
 	}
 
@@ -245,10 +248,15 @@ static int kwest_access(const char *path, int mask)
 
 
 /**
+ * @fn void kwest_destroy(void *private_data)
  * @brief operations performed while unmount
- * @param private_data
- * @return void
- * @author HP
+ * @param private_data abstract data pointer
+ * @return void nothing
+ * @see close_db
+ * @see log_close
+ * @note all unfreed memory must be freed here
+ * @warning this function gets called explicitly only on "fusermount"
+ * @author Harshvardhan Pandit
  */
 void kwest_destroy(void *private_data)
 {
@@ -262,11 +270,18 @@ void kwest_destroy(void *private_data)
 
 
 /**
+ * @fn int kwest_mkdir(const char *path, mode_t mode)
  * @brief make directory
- * @param path
- * @param mode: mode of directory
- * @return 0: SUCCESS, -errno: error
- * @author HP
+ * @details this is the normal mkdir system call. calling this is supposed to 
+ * add a tag by the given name. mkdir is intepreted as make-tag. Since tags
+ * are represented as virtual directories, this is used to create them.
+ * The contents of directories are displayed using the readdir operation
+ * @param path path of file system
+ * @param mode mode of directory
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @see kwest_readdir
+ * @author Harshvardhan Pandit
  */  
 int kwest_mkdir(const char *path, mode_t mode)
 {
@@ -281,10 +296,14 @@ int kwest_mkdir(const char *path, mode_t mode)
 
 
 /**
+ * @fn int kwest_rmdir(const char *path)
  * @brief remove given directory
- * @param path
- * @return 0: SUCCESS, -errno: error
- * @author HP
+ * @details this is the normal rmdir system call. calling this is supposed to 
+ * remove a tag by the given name. rmdir is intepreted as remove-tag. 
+ * @param path path of file system
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit
  */
 int kwest_rmdir(const char *path)
 {
@@ -304,11 +323,13 @@ int kwest_rmdir(const char *path)
 
  
 /**
+ * @fn static int kwest_open(const char *path, struct fuse_file_info *fi)
  * @brief open a file for read/write operations
- * @param path
- * @param fi: fuse file handle
- * @return 0: SUCCESS, -errno: error
- * @author HP
+ * @param path path of file system
+ * @param fi fuse file handle
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit
  */
 static int kwest_open(const char *path, struct fuse_file_info *fi)
 {
@@ -339,11 +360,13 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
 
 
 /**
+ * @fn static int kwest_release(const char *path, struct fuse_file_info *fi)
  * @brief called when last handle to file is closed
- * @param path
- * @param fi: fuse file handle
- * @return 0: SUCCESS, -errno: error
- * @author HP 
+ * @param path path of file system
+ * @param fi fuse file handle
+ * @return 0 on SUCCESS
+ * @return -errno on  error
+ * @author Harshvardhan Pandit 
  */
 static int kwest_release(const char *path, struct fuse_file_info *fi)
 {
@@ -357,15 +380,32 @@ static int kwest_release(const char *path, struct fuse_file_info *fi)
 
 
 /**
+ * @fn static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
  * @brief called when creating a new file
- * @param path
- * @param mode: file permissions and mode
- * @param dev
- * @return 0: SUCCESS, -errno: error
- * @author HP 
+ * @details mknod functionality when called from out of the file system
+ * by and external entity is not yet determined
+ * @param path path of file system
+ * @param mode file permissions and mode
+ * @param dev creation mode
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit 
  */
 static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 {
+	/** @todo
+	 * kwest_mknod: create new file directly into file system?
+	 */
+	/** @todo
+	 * kwest_mknod: what happens when utilities such as the browser want 
+	 * to create temporar files to work with cp/mv
+	 */
+	 
+	/** @bug
+	 * cp/mv does not work correctly due to improper implementation of
+	 * kwest_mknod. cp/mv will work correctly when it is from kwest
+	 * to any other filesystem. internal working is buggy / incorrect.
+	 */
 	int res;
 	const char *abspath = get_absolute_path(path);
 	log_msg("mknod: %s",path);
@@ -403,11 +443,13 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 
 
 /**
+ * @fn static int kwest_rename(const char *from, const char *to)
  * @brief rename a file to specified name
- * @param from: original filename and path
- * @param to: specified name and path
- * @return 0: SUCCESS, -errno: error
- * @author HP
+ * @param from original filename and path
+ * @param to specified name and path
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit
  */ 
 static int kwest_rename(const char *from, const char *to)
 {
@@ -423,10 +465,12 @@ static int kwest_rename(const char *from, const char *to)
 
 
 /**
+ * @fn static int kwest_unlink(const char *path)
  * @brief remove file entry from system
- * @param path
- * @return 0: SUCCESS, -errno: error
- * @author HP 
+ * @param path path of file system
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit 
  */
 static int kwest_unlink(const char *path)
 {
@@ -443,14 +487,17 @@ static int kwest_unlink(const char *path)
 
 
 /**
+ * @fn static int kwest_read(const char *path, char *buf, size_t size, 
+ *                           off_t offset, struct fuse_file_info *fi)
  * @brief read specified bytes from file
- * @param path
- * @param buf: buffer to hold bytes
- * @param size: size of data to be read
- * @param offset: offset of last read
- * @param fi: fuse file handle
- * @return 0: SUCCESS, -errno: error
- * @author HP 
+ * @param path path of file system
+ * @param buf buffer to hold bytes
+ * @param size size of data to be read
+ * @param offset offset of last read
+ * @param fi fuse file handle
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit 
  */
 static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
@@ -491,14 +538,17 @@ static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 
 
 /**
+ * @fn static int kwest_write(const char *path, const char *buf, size_t size,
+                       off_t offset, struct fuse_file_info *fi)
  * @brief write specified bytes to file
- * @param path
- * @param buf: buffer to hold bytes
- * @param size: size of data to be written
- * @param offset: offset of last read
- * @param fi: fuse file handle
- * @return 0: SUCCESS, -errno: error
- * @author HP 
+ * @param path path of file system
+ * @param buf buffer to hold bytes
+ * @param size size of data to be written
+ * @param offset offset of last read
+ * @param fi fuse file handle
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit 
  */
 static int kwest_write(const char *path, const char *buf, size_t size,
                        off_t offset, struct fuse_file_info *fi)
@@ -536,11 +586,13 @@ static int kwest_write(const char *path, const char *buf, size_t size,
 
 
 /**
+ * @fn static int kwest_truncate(const char *path, off_t size)
  * @brief truncate file
- * @param path
- * @param size
- * @return 0: SUCCESS, -errno: error
- * @author HP 
+ * @param path path of file system
+ * @param size truncare length
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit 
  */
 static int kwest_truncate(const char *path, off_t size)
 {
@@ -572,11 +624,13 @@ static int kwest_truncate(const char *path, off_t size)
 
 
 /**
+ * @fn static int kwest_chmod(const char *path, mode_t mode)
  * @brief chande file modes and permissions
- * @param path
- * @param mode: mode of file to be set
- * @return 0: SUCCESS, -errno: error
- * @author HP 
+ * @param path path of file system
+ * @param mode mode of file to be set
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit 
  */
 static int kwest_chmod(const char *path, mode_t mode)
 {
@@ -605,12 +659,14 @@ static int kwest_chmod(const char *path, mode_t mode)
 
 
 /**
+ * @fn static int kwest_chown(const char *path, uid_t uid, gid_t gid)
  * @brief change file owner and permissions
- * @param path
- * @param uid
- * @param gid
- * @return 0: SUCCESS, -errno: error
- * @author HP 
+ * @param path path of file system
+ * @param uid user id
+ * @param gid group id
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit 
  */
 static int kwest_chown(const char *path, uid_t uid, gid_t gid)
 {
@@ -641,9 +697,48 @@ static int kwest_chown(const char *path, uid_t uid, gid_t gid)
 /* __FUSE FILESYSTEM OPERATIONS STRUCTURE__ */
 
 /**
+ * @struct kwest_oper
  * @brief fuse operations as functions
  * @note commented out part is not implemented
- */
+ * @details implemented operations:
+ @code
+  	.getattr	 = kwest_getattr,
+	.readdir	 = kwest_readdir,
+	.access		 = kwest_access,
+	.truncate	 = kwest_truncate,
+	.destroy	 = kwest_destroy,
+
+FILE RELATED FILESYSTEM OPERATIONS
+	.open		= kwest_open,
+	.release	= kwest_release,
+	.mknod		= kwest_mknod,
+	.rename		= kwest_rename,
+	.unlink		= kwest_unlink,
+	.read		= kwest_read,
+	.write		= kwest_write,
+	.chmod		= kwest_chmod,
+	.chown		= kwest_chown,
+
+DIRECTORY RELATED FILESYSTEM OPERATIONS
+	.mkdir		= kwest_mkdir,
+	.rmdir		= kwest_rmdir,
+
+NOT IMPLEMENTED
+	.symlink	= kwest_symlink,
+	.readlink	= kwest_readlink,
+	.link		= kwest_link,
+	.utimens	= kwest_utimens,
+	.statfs		= kwest_statfs,
+	.fsync		= kwest_fsync,
+
+#ifdef HAVE_SETXATTR
+	.setxattr	= kwest_setxattr,
+	.getxattr	= kwest_getxattr,
+	.listxattr	= kwest_listxattr,
+	.removexattr	= kwest_removexattr,
+#endif
+@endcode
+*/
 static struct fuse_operations kwest_oper = {
 /* BASIC FILESYSTEM OPERATIONS */
 	.getattr	 = kwest_getattr,
@@ -687,11 +782,13 @@ static struct fuse_operations kwest_oper = {
 
 
 /**
+ * @fn int call_fuse_daemon(int argc, char **argv)
  * @brief pass control to fuse daemon
- * @param argc
- * @param argv
- * @return 0: SUCCESS, -errno: error
- * @author HP
+ * @param argc argument count from main
+ * @param argv argument values from main
+ * @return 0 on SUCCESS
+ * @return -errno on error
+ * @author Harshvardhan Pandit
  */
 int call_fuse_daemon(int argc, char **argv)
 {
