@@ -29,7 +29,6 @@
 
 #include "import.h"
 #include "dbbasic.h"
-#include "extract_audio_taglib.h"
 #include "logging.h"
 #include "flags.h"
 #include "magicstrings.h"
@@ -52,7 +51,6 @@ static int import_semantics(const char *path,const char *dirname)
 	size_t dir_len;
 	
 	log_msg("import semantics: %s into %s", path, dirname);
-	 
 	if (directory == NULL) {
 		log_msg("ERROR: Couldn't open the directory");
 		perror ("Couldn't open the directory");
@@ -61,7 +59,6 @@ static int import_semantics(const char *path,const char *dirname)
 	
 	while ((entry = readdir(directory))) {
 		dir_len = strlen(entry->d_name);
-		
 		/* Calculate full name, check we are in file length limts */
 		if ((path_len + dir_len + 1) > _POSIX_PATH_MAX){
 			continue;
@@ -71,14 +68,14 @@ static int import_semantics(const char *path,const char *dirname)
 			strcat(full_name, "/");
 		}
 		strcat(full_name, entry->d_name);
-
 		/* Ignore files starting with . */
 		if((strchr(entry->d_name,'.')-entry->d_name) == 0){
 			continue;
 		}
 		
 		/* Ignore files ending with ~ */
-		if((strrchr(entry->d_name,'~')-entry->d_name) == dir_len-1){
+		if((strrchr(entry->d_name,'~')-entry->d_name) == 
+		   (int)dir_len-1){
 			continue;
 		}
 		
@@ -86,25 +83,19 @@ static int import_semantics(const char *path,const char *dirname)
 		if (stat(full_name, &fstat) < 0){
 			continue;
 		}
-		
 		if (S_ISDIR(fstat.st_mode)) { /* Directory */
-			
+		
 			if(add_tag(entry->d_name,USER_TAG) == KW_SUCCESS){
 				printf("Created Tag : %s\n",entry->d_name);
 			}
-			
 			/* Access Sub-Directories */
 			import_semantics(full_name,entry->d_name);
-			
 			/* Tag-Tag Relation */
 			add_association(entry->d_name,dirname,
 			                ASSOC_SUBGROUP);
-			
 		} else if(S_ISREG(fstat.st_mode)) { /* Regular File */
-			
 			if(add_file(full_name) == KW_SUCCESS){
 				printf("Added File  : %s\n",entry->d_name);
-				
 				/* Tag-File Relation */
 				tag_file(dirname,entry->d_name);
 			}
@@ -133,7 +124,6 @@ int import(const char *path)
 		printf("Creating Tag : %s\n",dirname);
 		add_association(dirname, TAG_FILES, ASSOC_SUBGROUP);
 	}
-	
 	if (import_semantics(path, dirname) == KW_SUCCESS) {
 		return KW_SUCCESS;
 	}

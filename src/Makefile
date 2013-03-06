@@ -1,36 +1,57 @@
-kwest : kwest_main.o fusefunc.o dbfuse.o logging.o dbbasic.o dbinit.o dbkey.o extract_metadata.o extract_audio_taglib.o import.o
-	gcc -o kwest kwest_main.o fusefunc.o dbfuse.o logging.o dbbasic.o dbinit.o dbkey.o extract_metadata.o extract_audio_taglib.o import.o -lfuse -lsqlite3 -ltag_c
- 
-kwest_main.o : kwest_main.c
-	gcc -c -Wall -std=gnu99 kwest_main.c -D_FILE_OFFSET_BITS=64 -lfuse
-fusefunc.o: fusefunc.c
-	gcc -c -Wall -std=gnu99 fusefunc.c -D_FILE_OFFSET_BITS=64 -lfuse
-import.o : import.c
-	gcc -c -Wall -std=gnu99 import.c -lsqlite3
-extract_audio_taglib.o : extract_audio_taglib.c
-	gcc -c -Wall -std=gnu99 extract_audio_taglib.c -ltag_c
-dbbasic.o: dbbasic.c
-	gcc -c -Wall -std=gnu99 dbbasic.c -lsqlite3
-dbinit.o: dbinit.c
-	gcc -c -Wall -std=gnu99 dbinit.c -lsqlite3
-dbkey.o: dbkey.c
-	gcc -c -Wall -std=gnu99 dbkey.c -lsqlite3
-extract_metadata.o: extract_metadata.c
-	gcc -c -Wall -std=gnu99 extract_metadata.c -lsqlite3
-logging.o: logging.c
-	gcc -c -Wall -std=gnu99 logging.c
-dbfuse.o: dbfuse.c
-	gcc -c -Wall -std=gnu99 dbfuse.c 
+SOURCES = fusefunc.c dbfuse.c logging.c dbbasic.c dbinit.c dbkey.c metadata_extract.c plugins_extraction.c import.c apriori.c kwest_main.c
 
+LIBS = -L$(LIB) -lfuse -lsqlite3 -lkw_taglib -ltag_c -ltag -Wl,-rpath=.
+
+INCLUDE = ../include
+LIB = ../lib
+
+EXE = kwest
+
+CC = gcc
+
+CCFLAGS = -g -Wall -Wextra -std=gnu99 -pedantic-errors -I$(INCLUDE)
+
+OFLAGS = -c
+
+ARCH = $(shell getconf LONG_BIT)
+
+X = -D_FILE_OFFSET_BITS=$(ARCH)
+
+OBJECTS = $(SOURCES:.c=.o)
+
+$(EXE) : $(OBJECTS)
+	$(CC) -o $(EXE) $(OBJECTS) $(LIBS)
+
+%.o: %.c
+	$(CC) $(OFLAGS) $(CCFLAGS) $< 
+ 
+fusefunc.o: fusefunc.c
+	$(CC) $(OFLAGS) $(CCFLAGS) $< $X
+
+kwest_libs: kw_taglib
+	export LD_LIBRARY_PATH=$(LIB):$LD_LIBRARY_PATH
+
+kw_taglib: plugin_taglib
+
+plugin_taglib: plugin_taglib.o kwt_upd_meta.o
+	gcc -g -shared -I$(INCLUDE) -Wl,-soname,libkw_taglib.so -o $(LIB)/libkw_taglib.so -ltag -ltag_c plugin_taglib.o kwt_upd_meta.o
+
+plugin_taglib.o:
+	gcc -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -std=gnu99 -fPIC -ltag_c -c plugin_taglib.c
+
+kwt_upd_meta.o:
+	g++ -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -fPIC -ltag kwt_upd_meta.cpp
+
+c: clean
 
 clean:
 	rm -rf *.o
 	rm -rf *.db
-	rm -rf kwest
-	
-cleanall:
-	rm -rf *.o
-	rm -rf *.db
-	rm -rf kwest
-	rm -rf ~/.config/kwest/
 
+ca: cleanall
+	
+cleanall: clean
+	rm -rf $(EXE)
+
+ob: cleanall
+	rm -rf ~/.config/$(EXE)/

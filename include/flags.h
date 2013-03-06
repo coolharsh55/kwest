@@ -12,10 +12,10 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * 	http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, 
+ *
+ * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -52,6 +52,7 @@
 #define FILE_START       0
 #define SYSTEM_TAG_START 0
 #define USER_TAG_START   100
+#define USER_MADE_TAG    500
 
 /* Tag-Tag Association Types */
 #define ASSOC_PROBABLY_RELATED 1
