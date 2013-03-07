@@ -1,3 +1,15 @@
+**2013 Mar 06**
+merged branch copy/mpove
+updated branch to current functions
+
+**2013 Mar 05**
+added .gitignore
+added Doxygen documentation
+
+**2013 Mar 03**
+merged branch apriori
+updated apriori to current functions
+
 **2013 Mar 02**
 Corrected Makefile
 Deleted branch - generalize_metadata
