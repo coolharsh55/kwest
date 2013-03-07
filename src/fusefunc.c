@@ -58,7 +58,7 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	log_msg("getattribute: %s",path);
 	/** check if path is root */
 	if(_is_path_root(path) == true) {
-		log_msg("PATH IS ROOT");
+		/*log_msg("PATH IS ROOT");*/
 		stbuf->st_mode= S_IFDIR | KW_STDIR;
 		stbuf->st_nlink=1;
 		return 0;
@@ -82,13 +82,13 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	}
 	/** check if path is for a directory */
 	if(path_is_dir(path) == true) {
-		log_msg("PATH IS DIR");
+		/*log_msg("PATH IS DIR");*/
 		stbuf->st_mode= S_IFDIR | KW_STDIR;
 		stbuf->st_nlink=1;
 		return 0;
 	/** check if path is for a file */
 	} else if(path_is_file(path) == true) {
-		log_msg("PATH IS FILE");
+		/*log_msg("PATH IS FILE");*/
 		abspath=get_absolute_path(path);
 		stbuf->st_mode= S_IFREG | KW_STFIL;
 		if(abspath == NULL) {

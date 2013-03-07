@@ -234,7 +234,6 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 		strcat(q2,kw_M.tagtype[i]);
 	}
 	strcat(q2,");");
-	log_msg(q2);
 	/*sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0); */
 	sqlite3_prepare_v2(get_kwdb(),q2,-1,&stmt,0); 
 
@@ -248,7 +247,6 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	sqlite3_bind_text(stmt,3,kw_M.tagv[1],-1,SQLITE_STATIC);
 	sqlite3_bind_text(stmt,4,kw_M.tagv[2],-1,SQLITE_STATIC);
 	sqlite3_bind_text(stmt,5,kw_M.tagv[3],-1,SQLITE_STATIC);
-	log_msg(q2);
 	status = sqlite3_step(stmt);
 
 	if(status == SQLITE_DONE){
