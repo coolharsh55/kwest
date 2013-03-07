@@ -180,7 +180,7 @@ const char *get_absolute_path(const char *path)
  */
 char *readdir_dirs(const char *path, void **ptr)
 {
-	log_msg ("readdir_dirs: %s",path);
+	/*log_msg ("readdir_dirs: %s",path);*/
 	if (*ptr == NULL) {
 		if (*(path + 1) == '\0') {
 			*ptr=get_tags_by_association(TAG_ROOT, ASSOC_SUBGROUP);
@@ -205,7 +205,7 @@ char *readdir_dirs(const char *path, void **ptr)
  */
 char *readdir_files(const char *path, void **ptr)
 {
-	log_msg ("readdir_files: %s",path);
+	/*log_msg ("readdir_files: %s",path);*/	
 	if (*ptr == NULL) {
 		if (*(path + 1) == '\0') {
 			*ptr = get_fname_under_tag(TAG_ROOT);
@@ -229,6 +229,19 @@ char *readdir_files(const char *path, void **ptr)
  */
 const char *get_newfile_path(const char *path)
 {
+	/*
+	 * @HP
+	 * this function should get path to some real location
+	 * so that the new file can be created there
+	 * parse path - there will be the format
+	 * /Files/Music/tags.../filename.ext
+	 * so try to get directory /Music/tags... or something
+	 * then return that...
+	 * 
+	 * char *path = some_new_path
+	 * 
+	 * return (const char *)path;
+	 */
 	(void)path;
 	return NULL;
 }
