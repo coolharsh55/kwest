@@ -135,7 +135,9 @@ int main(int argc, char *argv[])
 	/** initialize database */
 	begin_transaction();
 	create_db();
+	commit_transaction();
 	/** load plugins */
+	begin_transaction();
 	int ret = plugins_add_plugin(load_this_plugin());
 	printf("plugin load status = %d\n", ret);
 	commit_transaction();
