@@ -43,16 +43,11 @@
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname);
 
-/*
- * Form association for metadata in file
- */
-
-
 /* ---------------- ADD/REMOVE -------------------- */
 
 /**
  * @fn int add_tag(const char *tagname,int tagtype)
- * @brief Create a new user tag in kwest 
+ * @brief Create a new user tag in kwest
  * @param tagname name of the tag
  * @param tagtype systemtag / usertag
  * @return KW_SUCCESS on SUCCESS
@@ -195,119 +190,44 @@ int add_file(const char *abspath)
 static int add_metadata_file(int fno,const char *abspath,char *fname)
 {
 	sqlite3_stmt *stmt;
-	/*char query[QUERY_SIZE];*/
-	char q2[QUERY_SIZE];
+	char query[QUERY_SIZE];
 	int status;
 	int i = 0;
-/*	struct metadata_audio M; */
 	struct kw_metadata kw_M;
-	/*! struct metadata M; */
-	/*void *meta;*/
-
-	/*!
-	 * meta = extract_metadata(abspath, &M);
-	 * if(meta == NULL) {
-		 * return KW_ERROR;
-	 * }
-	 */
-	/*meta = extract_metadata_file(abspath, &M);
-	
-	
-	
-	if(meta == NULL) {
-		extract_clear_strings(meta);
-		return KW_ERROR;
-	}
-	*/
-	/*strcpy(query,"insert into Audio values"
-	             "(:fno,:title,:artist,:album,:genre);");*/
 
 	status = metadata_extract(abspath, &kw_M);
 	if(status == KW_FAIL) {
 		return KW_ERROR;
 	}
-	strcpy(q2, "insert into ");
-	strcat(q2, kw_M.type);
-	strcat(q2, " values(:fno");
-	for (i=0 ; i<kw_M.tagc ; i++) {
-		strcat(q2,",:");
-		strcat(q2,kw_M.tagtype[i]);
-	}
-	strcat(q2,");");
-	/*sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0); */
-	sqlite3_prepare_v2(get_kwdb(),q2,-1,&stmt,0); 
 
-	/*! int i = 1;
-	 * for(; i<=M.argc ; i++) {
-		 * sqlite3_bind_text(stmt,i,M.argv[i],-1,SQLITE_STATIC);
-	 * }
-	 */
+	strcpy(query, "insert into ");
+	strcat(query, kw_M.type);
+	strcat(query, " values(:fno");
+	for (i = 0 ; i < kw_M.tagc ; i++) {
+		strcat(query, ",:");
+		strcat(query, kw_M.tagtype[i]);
+	}
+	strcat(query, ");");
+	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+
 	sqlite3_bind_int(stmt,1,fno);
-	sqlite3_bind_text(stmt,2,kw_M.tagv[0],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,3,kw_M.tagv[1],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,4,kw_M.tagv[2],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,5,kw_M.tagv[3],-1,SQLITE_STATIC);
+	for(i = 1; i <= kw_M.tagc ; i++) {
+		sqlite3_bind_text(stmt, i, kw_M.tagv[i], -1, SQLITE_STATIC);
+	}
+
 	status = sqlite3_step(stmt);
 
 	if(status == SQLITE_DONE){
-		/*
-		associate_file_metadata(TAG_ARTIST,kw_M.tagv[1],fname);
-		associate_file_metadata(TAG_ALBUM,kw_M.tagv[2],fname);
-		associate_file_metadata(TAG_GENRE,kw_M.tagv[3],fname);*/
-		kw_M.obj = (void *)fname;		
+		kw_M.obj = (void *)fname;
 	} else { /* Handle if Error while Adding Metadata */
 		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,fname);
-		/*extract_clear_strings(meta);*/
 		kw_M.do_cleanup(&kw_M);
 		sqlite3_finalize(stmt);
 		return KW_FAIL;
 	}
 	kw_M.do_cleanup(&kw_M);
-	/*extract_clear_strings(meta);*/
 	sqlite3_finalize(stmt);
 
-	return KW_SUCCESS;
-}
-
-/**
- * @brief Form association for metadata in file
- * @param metatype - metadata category
- * @param tagname - metadata
- * @param fname - file name
- * @return void
- * @author SG
- */
-int associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname)
-{
-	char *newtag=NULL;
-	int taglength = 0;
-
-	if( (strcmp(tagname,"") == 0) || /* No meta information */
-	    (strcmp(metatype,tagname)==0) ||
-	    (strcmp(metatype,TAG_UNKNOWN)==0) ){
-		/*newtag=strdup(TAG_UNKNOWN);*/
-		taglength = strlen(TAG_UNKNOWN) + strlen(metatype) + 2;
-		newtag = (char *)malloc(taglength * sizeof(char));
-		newtag = strcpy(newtag, TAG_UNKNOWN);
-		newtag = strcat(newtag, " ");
-		newtag = strcat(newtag, metatype);
-		/*newtag=strcat(strcat(newtag," "),metatype);*/
-		/* Create Tag Unknown */
-		add_tag(newtag,SYSTEM_TAG);
-		/* Associate Tag Unknown with File Type*/
-		add_association(newtag,metatype,ASSOC_SUBGROUP);
-		/* Tag File to Metadata Tag */
-		tag_file(newtag,fname);
-		free((char *)newtag);
-	} else { /* Metadata Exist */
-		/* Create Tag for Metadata */
-		add_tag(tagname,USER_TAG);
-		/* Associate Metadata tag with File Type */
-		add_association(tagname,metatype,ASSOC_SUBGROUP);
-		/* Tag File to Metadata Tag */
-		tag_file(tagname,fname);
-	}
 	return KW_SUCCESS;
 }
 
