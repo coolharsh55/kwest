@@ -193,7 +193,7 @@ static int on_unload(struct plugin_extraction_entry *plugin)
 	return KW_SUCCESS;
 }
 
-struct plugin_extraction_entry *load_extractor_plugin()
+struct plugin_extraction_entry *load_extract_plugin()
 {
 	static struct plugin_extraction_entry *plugin = NULL;
 	if (plugin == NULL) {
