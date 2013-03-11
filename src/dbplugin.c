@@ -25,6 +25,10 @@
 #include "flags.h"
 #include "magicstrings.h"
 
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 /**
  * @brief Add new mime type to Kwest
  * @param mime Mime Type
