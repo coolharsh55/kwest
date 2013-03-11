@@ -29,10 +29,6 @@
 #include "flags.h"
 #include "magicstrings.h"
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 /**
  * @brief Add new mime type to Kwest
  * @param mime Mime Type
@@ -41,11 +37,13 @@
  */
 void add_mime_type(char *mime)
 {
-	char query[QUERY_SIZE];
+	/*! char query[QUERY_SIZE]; */
 
 	/* Create new table for new mime type */
+	/*!
 	sprintf(query, "create table if not exists %s (fno integer);", mime);
 	sqlite3_exec(get_kwdb(),query,0,0,0);
+	*/
 
 	add_tag(mime, SYSTEM_TAG);
 	add_association(mime, TAG_ROOT, ASSOC_SUBGROUP);
@@ -60,11 +58,13 @@ void add_mime_type(char *mime)
  */
 void add_metadata_type(char *mime, char *metadata)
 {
-	char query[QUERY_SIZE];
+	/*! char query[QUERY_SIZE]; */
 
 	/* Add new metadata to existing mime table */
+	/*!
 	sprintf(query, "alter table %s add column %s text", mime, metadata);
 	sqlite3_exec(get_kwdb(),query,0,0,0);
+	*/
 
 	add_tag(metadata, SYSTEM_TAG);
 	add_meta_info(mime, metadata);

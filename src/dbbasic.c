@@ -180,6 +180,46 @@ int add_file(const char *abspath)
 }
 
 /**
+ * @brief Store metadata for file in database
+ * @param int fno - file id
+ * @param kw_metadata Structure containing metadata
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL
+ * @author SG HP
+ */
+static int insert_metadata_file(int fno, struct kw_metadata *kw_M)
+{
+	sqlite3_stmt *stmt;
+	char query[QUERY_SIZE];
+	int status;
+	int i;
+
+	strcpy(query, "insert into ");
+	strcat(query, kw_M->type);
+	strcat(query, " values(:fno");
+	for (i = 0 ; i < kw_M->tagc ; i++) {
+		strcat(query, ",:");
+		strcat(query, kw_M->tagtype[i]);
+	}
+	strcat(query, ");");
+	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+
+	sqlite3_bind_int(stmt,1,fno);
+	for(i = 2; i <= (kw_M->tagc + 1) ; i++) {
+		sqlite3_bind_text(stmt, i, kw_M->tagv[i-2], -1, SQLITE_STATIC);
+	}
+
+	status = sqlite3_step(stmt);
+
+	if(status == SQLITE_DONE){
+		sqlite3_finalize(stmt);
+		return KW_SUCCESS;
+	}
+
+	sqlite3_finalize(stmt);
+	return KW_FAIL;
+}
+
+/**
  * @brief Extract and add metadata for file in kwest
  * @param int fno - file id
  * @param abspath - absolute path
@@ -189,10 +229,7 @@ int add_file(const char *abspath)
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname)
 {
-	sqlite3_stmt *stmt;
-	char query[QUERY_SIZE];
 	int status;
-	int i = 0;
 	struct kw_metadata kw_M;
 
 	status = metadata_extract(abspath, &kw_M);
@@ -200,33 +237,18 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 		return KW_ERROR;
 	}
 
-	strcpy(query, "insert into ");
-	strcat(query, kw_M.type);
-	strcat(query, " values(:fno");
-	for (i = 0 ; i < kw_M.tagc ; i++) {
-		strcat(query, ",:");
-		strcat(query, kw_M.tagtype[i]);
-	}
-	strcat(query, ");");
-	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+	/*!
+	status = insert_metadata_file(fno, &kw_M);
 
-	sqlite3_bind_int(stmt,1,fno);
-	for(i = 2; i <= (kw_M.tagc + 1) ; i++) {
-		sqlite3_bind_text(stmt, i, kw_M.tagv[i-2], -1, SQLITE_STATIC);
-	}
-
-	status = sqlite3_step(stmt);
-
-	if(status == SQLITE_DONE){
-		kw_M.obj = (void *)fname;
-	} else { /* Handle if Error while Adding Metadata */
+	if(status != KW_SUCCESS) {
 		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,fname);
 		kw_M.do_cleanup(&kw_M);
-		sqlite3_finalize(stmt);
 		return KW_FAIL;
 	}
+	*/
+
+	kw_M.obj = (void *)fname;
 	kw_M.do_cleanup(&kw_M);
-	sqlite3_finalize(stmt);
 
 	return KW_SUCCESS;
 }
