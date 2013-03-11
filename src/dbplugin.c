@@ -20,6 +20,10 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "dbinit.h"
 #include "dbbasic.h"
 #include "flags.h"

@@ -211,8 +211,8 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 
 	sqlite3_bind_int(stmt,1,fno);
-	for(i = 1; i <= kw_M.tagc ; i++) {
-		sqlite3_bind_text(stmt, i, kw_M.tagv[i], -1, SQLITE_STATIC);
+	for(i = 2; i <= (kw_M.tagc + 1) ; i++) {
+		sqlite3_bind_text(stmt, i, kw_M.tagv[i-2], -1, SQLITE_STATIC);
 	}
 
 	status = sqlite3_step(stmt);

@@ -39,47 +39,8 @@ static int do_on_init(void *obj)
 
 static int initializations(void)
 {
-	/* hypothetical metadata table creation & tags
-	 * add_mime_type("Audio"); ->
-	 * 	string = "create table if not exists <mime_type> (fno integer);
-	 * 	add_tag(TAG_AUDIO, SYSTEM_TAG);
-	 * 	add_association(TAG_AUDIO, TAG_ROOT, ASSOC_SUBGROUP);
-	 * add_metadata_type("Audio", "Artist"); ->
-	 * 	ALTER TABLE <mime_type> ADD COLUMN "metadata_type" {text};
-	 * 	add_tag(TAG_ARTIST, SYSTEM_TAG);
-	 * 	add_meta_info(TAG_AUDIO, TAG_ARTIST);
-	 * 	add_association(TAG_ARTIST, TAG_AUDIO, ASSOC_SUBGROUP);
-	 * add_metadata_type("Audio, Artist"); ->
-	 * 	ALTER TABLE <mime_type> ADD COLUMN "metadata_type" {text};
-	 * 	add_tag(TAG_ALBUM, SYSTEM_TAG);
-	 * 	add_meta_info(TAG_AUDIO, TAG_ALBUM);
-	 * 	add_association(TAG_ALBUM, TAG_AUDIO, ASSOC_SUBGROUP);
-	 * add_metadata_type("Audio, Artist"); ->
-	 * 	ALTER TABLE <mime_type> ADD COLUMN "metadata_type" {text};
-	 * 	add_tag(TAG_GENRE, SYSTEM_TAG);
-	 * 	add_meta_info(TAG_AUDIO, TAG_GENRE);
-	 * 	add_association(TAG_GENRE, TAG_AUDIO, ASSOC_SUBGROUP);
-	 *
-
-	/ * Create tags to browse Audio Files * /
-	add_tag(TAG_AUDIO, SYSTEM_TAG);
-	add_tag(TAG_ARTIST, SYSTEM_TAG);
-	add_tag(TAG_ALBUM, SYSTEM_TAG);
-	add_tag(TAG_GENRE, SYSTEM_TAG);
-
-	/ * Metadata available for Audio Files * /
-	add_meta_info(TAG_AUDIO, TAG_ARTIST);
-	add_meta_info(TAG_AUDIO, TAG_ALBUM);
-	add_meta_info(TAG_AUDIO, TAG_GENRE);
-
-	/ * Establish tag-tag associations * /
-	add_association(TAG_AUDIO, TAG_ROOT, ASSOC_SUBGROUP);
-	add_association(TAG_ARTIST, TAG_AUDIO, ASSOC_SUBGROUP);
-	add_association(TAG_ALBUM, TAG_AUDIO, ASSOC_SUBGROUP);
-	add_association(TAG_GENRE, TAG_AUDIO, ASSOC_SUBGROUP);
-	*/
-
 	add_mime_type(TAG_AUDIO);
+	add_metadata_type(TAG_AUDIO, TAG_TITLE);
 	add_metadata_type(TAG_AUDIO, TAG_ARTIST);
 	add_metadata_type(TAG_AUDIO, TAG_ALBUM);
 	add_metadata_type(TAG_AUDIO, TAG_GENRE);
