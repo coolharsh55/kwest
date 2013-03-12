@@ -1,3 +1,9 @@
+**2013 Mar 12**
+Set limit for rules generation in apriori
+Set boundary conditions to check string length in apriori
+Fixed some apriori memory leaks
+refactor apriori code
+
 **2013 Mar 06**
 merged branch copy/mpove
 updated branch to current functions
