@@ -25,8 +25,9 @@
 
 #define MINSUP 0.4
 #define MINCONF 0.5
+#define RULE_LEVEL 0.5
 
-#define MAX_ITEMSET_LENGTH 512
+#define MAX_ITEMSET_LENGTH 1024
 #define MAX_ITEM_LENGTH 5
 
 #define CHAR_ITEMSET_SEP '|'
