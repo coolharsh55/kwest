@@ -187,7 +187,10 @@ static int get_fid_str_under_tag(char *tagname, char **tag_files)
 			break;
 		}
 	}
-	*(*tag_files + strlen(*tag_files) - 1) = '\0';
+	if(strcmp(*tag_files, "") != 0) {
+		*(*tag_files + strlen(*tag_files) - 1) = '\0';
+	}
+
 	return filecnt;
 }
 
@@ -198,17 +201,18 @@ static int check_itemset(char *itemset, char *main_itemset, int maincnt)
 	int i;
 
 	itemsetcnt = get_no_of_items(itemset);
+	token = (char *)malloc(strlen(itemset) * sizeof(char));
 
 	for(i = 0; i < itemsetcnt; i++) {
-		token = get_token(itemset, i, CHAR_ITEM_SEP);
+		get_token(&token, itemset, i, CHAR_ITEM_SEP);
 		if(check_item(main_itemset, token, maincnt, CHAR_ITEM_SEP) == 0)
 		{
 			free((char *) token);
 			return 0; /* Itemset not present in mainitemset */
 		}
-		free((char *) token);
 	}
 
+	free((char *) token);
 	return 1;
 }
 
@@ -220,11 +224,12 @@ static void correct_items(char **itemset, int *cnt, char *reference, int refcnt)
 	int tmpcnt;
 	char *token;
 
+	token = (char *)malloc(strlen(*itemset) * sizeof(char));
 	strcpy(tmpset, "");
 	tmpcnt = 0;
 
 	for(i = 0; i < *cnt; i++) {
-		token = get_token(*itemset, i, CHAR_ITEM_SEP);
+		get_token(&token, *itemset, i, CHAR_ITEM_SEP);
 		if(check_item(reference, token, refcnt, CHAR_ITEM_SEP) == 0) {
 			tmpname = get_file_name(atoi(token));
 			if(strlen(tmpset) < (MAX_ITEMSET_LENGTH -
@@ -238,13 +243,16 @@ static void correct_items(char **itemset, int *cnt, char *reference, int refcnt)
 				break;
 			}
 		}
-		free((char *) token);
 	}
-	tmpset[strlen(tmpset) - 1] = '\0';
+
+	if(strcmp(tmpset, "") != 0) {
+		tmpset[strlen(tmpset) - 1] = '\0';
+	}
 
 	strcpy(*itemset, tmpset);
 	*cnt = tmpcnt;
-	free((char *)tmpset);
+	free((char *) token);
+	free((char *) tmpset);
 }
 
 /**
@@ -296,12 +304,12 @@ char *get_file_suggestions(char *tagname)
 		/* Rule Applies, append to suggestions */
 		//log_msg("%s->%s",lhsrule,rhsrule);
 
+		token = (char *)malloc(strlen(rhsrule) * sizeof(char));
 		/* Remove Duplication */
 		for(i = 0; i < get_no_of_items(rhsrule); i++) {
-			token = get_token(rhsrule, i, CHAR_ITEM_SEP);
+			get_token(&token, rhsrule, i, CHAR_ITEM_SEP);
 			if( check_item(suggest, token, suggestcnt,
 			               CHAR_ITEM_SEP) == 0) {
-				/* TODO : check buffer overflow */
 				if(strlen(suggest) < (MAX_ITEMSET_LENGTH -
 				                      strlen(token) - 1) ) {
 					strcat(suggest,token);
@@ -313,19 +321,24 @@ char *get_file_suggestions(char *tagname)
 					break;
 				}
 			}
-			free((char *)token);
 		}
-
-
+		free((char *)token);
 	} while(1);
 	sqlite3_finalize(stmt);
 
-	suggest[strlen(suggest) - 1] = '\0';
+	if(strcmp(suggest, "") != 0) {
+		suggest[strlen(suggest) - 1] = '\0';
+	}
 	correct_items(&suggest, &suggestcnt, tag_files, filecnt);
-	//log_msg("%s",suggest);
-	if(strcmp(suggest,"") == 0) return NULL;
-	//free((char *) suggest);
 	free((char *) tag_files);
+
+	/* log_msg("%s",suggest); */
+
+	if(strcmp(suggest,"") == 0) {
+		free((char *) suggest);
+		return NULL;
+	}
+
 	return suggest;
 }
 

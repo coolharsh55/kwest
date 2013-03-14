@@ -24,6 +24,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <sqlite3.h>
+
 #include "dbapriori.h"
 #include "apriori.h"
 #include "dbbasic.h"
@@ -69,59 +71,56 @@ static I* get_itemset(int itemset_num)
  * @return token
  * @author SG
  */
-char *get_token(char *source_str ,int tokenno, char separator)
+void get_token(char **token, char *source_str ,int tokenno, char separator)
 {
-	char *token;
 	int i, j, cur;
 
 	j = 0;
 	cur = 0;
-	token = (char *)malloc(strlen(source_str) * sizeof(char));
-	strcpy(token,"");
+	strcpy(*token, "");
 
 	if(source_str == NULL || strcmp(source_str, "") == 0 ) {
-		return token;
+		return;
 	}
 
 
-	for(i = 0 ; source_str[i] != '\0' && cur <= tokenno ; i++) {
+	for(i = 0 ; (source_str[i] != '\0') && (cur <= tokenno) ; i++) {
 		if(source_str[i] == separator) {
 			cur++;
 			i++;
 		}
 		if(tokenno == cur) {
-			token[j++] = source_str[i];
+			*(*token + j) = source_str[i];
+			j++;
 		}
 	}
-	token[j] = '\0';
 
-	return token;
+	*(*token + j) = '\0';
 }
 
 /**
  * @brief Returns individual items from a token
  * @param token
  * @param item_iter Iterator for item
- * @return item
+ * @return void
  * @author SG
  */
-char *get_item(char *token,int *item_iter)
+void get_item(char **item, char *token,int *item_iter)
 {
 	int i;
-	char *item = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
+
+	strcpy(*item, "");
 
 	for(i = 0; token[*item_iter] != '\0'; i++, *item_iter += 1) {
 		if((token[*item_iter] == CHAR_ITEMSET_SEP) ||
 		   (token[*item_iter] == CHAR_ITEM_SEP)) {
 			break;
 		}
-		item[i] = token[*item_iter];
+		*(*item + i) = token[*item_iter];
 	}
 
-	item[i] = '\0';
+	*(*item + i) = '\0';
 	*item_iter += 1;
-
-	return item;
 }
 
 /**
@@ -156,17 +155,18 @@ int get_no_of_items(char *token)
  */
 int check_item(char *itemset, char *item, int count, char sep)
 {
-	char *token;
+	char *token = (char *)malloc(strlen(itemset) * sizeof(char));
 	int i;
 
 	for(i = 0; i < count; i++) {
-		token = get_token(itemset, i, sep);
+		get_token(&token, itemset, i, sep);
 		if(strcmp(token, item) == 0) {
-			free((char *)token);
+			free((char *) token);
 			return 1;
 		}
-		free((char *) token);
 	}
+
+	free((char *) token);
 	return 0;
 }
 
@@ -192,21 +192,22 @@ int isfull(char *str, unsigned int no_of_items)
 /**
  * @brief Generate candidates
  * @param itemset_num
+ * @param files
  * @return Count of candidates generated
  * @author SG
  */
-static int generate_candidates(int itemset_num)
+static int generate_candidates(int itemset_num, sqlite3_stmt *(*files)(void) )
 {
 	I *tmpi;
-	void *tmp;
 	int i,j,k;
 
 	/* if its the first itemset, candidates are all items to be analyzed */
 	if(itemset_num == 1) {
 		const char *item;
+		void *t;
 
-		tmp = get_user_tagged_files();
-		while ((item = string_from_stmt(tmp)) != NULL) {
+		t = (*files)();
+		while ((item = string_from_stmt(t)) != NULL) {
 			if(headi == NULL){
 				headi = newI(itemset_num);
 				tmpi = headi;
@@ -215,7 +216,7 @@ static int generate_candidates(int itemset_num)
 				/** @todo : Add Candidate link list */
 				log_msg("Insufficient memory to generate "
 				         "%d-candidate", itemset_num);
-				finalize(tmp);
+				finalize(t);
 				return headi->count;
 			}
 			strcat(tmpi->candidate->members, item);
@@ -230,7 +231,11 @@ static int generate_candidates(int itemset_num)
 		}
 
 	} else if(itemset_num == 2) { /* For 2-candidate Itemset , L1 join L1 */
+		char *token;
+
 		tmpi = headi->nexti = newI(itemset_num);
+		token = (char *)malloc(strlen(headi->candidate->members) *
+		                       sizeof(char));
 
 		for(i = 0; i < (headi->count - 1); i++) {
 			for(j = (i + 1); j < headi->count; j++) {
@@ -239,34 +244,39 @@ static int generate_candidates(int itemset_num)
 					/** @todo : Add Candidate link list */
 					log_msg("Insufficient memory to "
 					 "generate %d-candidate", itemset_num);
+					free((char *) token);
 					return tmpi->count;
 				}
 
-				tmp = get_token(headi->candidate->members, i,
+				get_token(&token, headi->candidate->members, i,
 						CHAR_ITEMSET_SEP);
-				strcat(tmpi->candidate->members, tmp);
-				free((char *)tmp);
+				strcat(tmpi->candidate->members, token);
 				strcat(tmpi->candidate->members, STR_ITEM_SEP);
 
-				tmp = get_token(headi->candidate->members, j,
+				get_token(&token, headi->candidate->members, j,
 						CHAR_ITEMSET_SEP);
-				strcat(tmpi->candidate->members, tmp);
-				free((char *)tmp);
+				strcat(tmpi->candidate->members, token);
 				strcat(tmpi->candidate->members,
 				        STR_ITEMSET_SEP);
 				tmpi->count += 1;
 			}
 		}
+		free((char *) token);
 		return tmpi->count;
 
 	} else {
 		I *previ;
-		char Ci_item[MAX_ITEMSET_LENGTH],Cj_item[MAX_ITEMSET_LENGTH];
-		char *Ci,*Cj;
-		int Ci_iter,Cj_iter;
+		char Ci_item[MAX_ITEMSET_LENGTH], Cj_item[MAX_ITEMSET_LENGTH];
+		char *Ci, *Cj, *item;
+		int Ci_iter, Cj_iter;
 
 		/* Access last itemset */
 		previ = get_itemset(itemset_num - 1);
+		Ci = (char *)malloc(strlen(previ->candidate->members) *
+		                    sizeof(char));
+		Cj = (char *)malloc(strlen(previ->candidate->members) *
+		                    sizeof(char));
+		item = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
 
 		/* Create new Itemset for itemset_num */
 		tmpi = newI(itemset_num);
@@ -279,9 +289,9 @@ static int generate_candidates(int itemset_num)
 				Cj_iter = 0;
 				strcpy(Ci_item, "");
 				strcpy(Cj_item, "");
-				Ci = get_token(previ->candidate->members, i,
+				get_token(&Ci, previ->candidate->members, i,
 				               CHAR_ITEMSET_SEP);
-				Cj = get_token(previ->candidate->members, j,
+				get_token(&Cj, previ->candidate->members, j,
 				               CHAR_ITEMSET_SEP);
 
 				/* make string of the first n-2 tokens */
@@ -290,26 +300,26 @@ static int generate_candidates(int itemset_num)
 						log_msg("Insufficient memory to"
 						        " compute %d-candidate",
 						          itemset_num);
+						free((char *)item);
 						free((char *)Ci);
 						free((char *)Cj);
 						return tmpi->count;
 					}
-					tmp = get_item(Ci, &Ci_iter);
-					strcat(Ci_item, tmp);
-					free((char *)tmp);
+					get_item(&item, Ci, &Ci_iter);
+					strcat(Ci_item, item);
 					strcat(Ci_item, STR_ITEM_SEP);
 
 					if(isfull(Cj_item, 1)) {
 						log_msg("Insufficient memory to"
 						        " compute %d-candidate",
 						        itemset_num);
+						free((char *)item);
 						free((char *)Ci);
 						free((char *)Cj);
 						return tmpi->count;
 					}
-					tmp = get_item(Cj, &Cj_iter);
-					strcat(Cj_item, tmp);
-					free((char *)tmp);
+					get_item(&item, Cj, &Cj_iter);
+					strcat(Cj_item, item);
 					strcat(Cj_item, STR_ITEM_SEP);
 				}
 
@@ -321,6 +331,7 @@ static int generate_candidates(int itemset_num)
 						log_msg("Insufficient memory to"
 						        " generate %d-candidate"
 						        , itemset_num);
+						free((char *)item);
 						free((char *)Ci);
 						free((char *)Cj);
 						return tmpi->count;
@@ -328,24 +339,24 @@ static int generate_candidates(int itemset_num)
 					strcat(tmpi->candidate->members,
 					       Ci_item);
 
-					tmp = get_item(Ci, &Ci_iter);
-					strcat(tmpi->candidate->members, tmp);
-					free((char *)tmp);
+					get_item(&item, Ci, &Ci_iter);
+					strcat(tmpi->candidate->members, item);
 					strcat(tmpi->candidate->members,
 					       STR_ITEM_SEP);
 
-					tmp = get_item(Cj, &Cj_iter);
-					strcat(tmpi->candidate->members, tmp);
-					free((char *)tmp);
+					get_item(&item, Cj, &Cj_iter);
+					strcat(tmpi->candidate->members, item);
 					strcat(tmpi->candidate->members,
 					       STR_ITEMSET_SEP);
 
 					tmpi->count += 1;
 				}
-				free((char *)Ci);
-				free((char *)Cj);
 			}
 		}
+
+		free((char *) item);
+		free((char *) Ci);
+		free((char *) Cj);
 		return tmpi->count;
 	}
 }
@@ -369,6 +380,7 @@ static char *get_subsets(char *members,int itemset_num)
 		return NULL;
 	}
 
+	token = (char *)malloc(strlen(members) * sizeof(char));
 	subset = (char *) malloc(strlen(members) * itemset_num * sizeof(char));
 	strcpy(subset, "");
 
@@ -377,19 +389,21 @@ static char *get_subsets(char *members,int itemset_num)
 			if(i == j ) {
 				continue;
 			}
-			token = get_token(members, j, CHAR_ITEM_SEP);
+			get_token(&token, members, j, CHAR_ITEM_SEP);
 			if(isfull(subset, 1)) {
 				log_msg("Insufficient memory to generate "
 				       "subsets for %d-candidate", itemset_num);
 				subset[strlen(subset) - 1] = CHAR_ITEMSET_SEP;
+				free((char *) token);
 				return subset;
 			}
 			strcat(subset,token);
 			strcat(subset, STR_ITEM_SEP);
-			free((char *) token);
 		}
 		subset[strlen(subset) - 1] = CHAR_ITEMSET_SEP;
 	}
+
+	free((char *) token);
 	return subset;
 }
 
@@ -406,6 +420,7 @@ static void prune_item(I *tmpi, int itemno)
 	char *token;
 	int i;
 
+	token = (char *)malloc(strlen(tmpi->candidate->members) * sizeof(char));
 	tmp = (char *) malloc(strlen(tmpi->candidate->members) * sizeof(char));
 	strcpy(tmp, "");
 
@@ -413,21 +428,20 @@ static void prune_item(I *tmpi, int itemno)
 		if(i == itemno) {
 			continue;
 		}
-		token = get_token((char *)tmpi->candidate->members, i,
+		get_token(&token, tmpi->candidate->members, i,
 		                  CHAR_ITEMSET_SEP);
 		if(isfull(tmp, 1)) {
 			log_msg("Insufficient memory to update pruned "
 			        "candidate");
-			free((char *) token);
 			break;
 		} else {
 			strcat(tmp, token);
 			strcat(tmp, STR_ITEMSET_SEP);
 		}
-		free((char *) token);
 	}
 	strcpy(tmpi->candidate->members, tmp);
 	free((char*) tmp);
+	free((char *) token);
 }
 
 /**
@@ -448,12 +462,16 @@ static int prune_candidates(int itemset_num)
 
 	previ = get_itemset(itemset_num - 1);
 	curri = previ->nexti;
+	tmp = (char *)malloc(strlen(curri->candidate->members) * sizeof(char));
+	prevtoken = (char *)malloc(strlen(previ->candidate->members) *
+	                           sizeof(char));
 
 	/* for all candidates in i Itemset */
 	for(i = 0; i < curri->count; i++) {
 
-		tmp = get_token(curri->candidate->members, i, CHAR_ITEMSET_SEP);
+		get_token(&tmp, curri->candidate->members, i, CHAR_ITEMSET_SEP);
 		subset = get_subsets(tmp, itemset_num);
+		item = (char *)malloc(strlen(subset) * sizeof(char));
 
 		 /* log_msg("prune members : %s subset : %s",tmp, subset); */
 
@@ -461,18 +479,16 @@ static int prune_candidates(int itemset_num)
 		 * check for all subsets */
 		for(j = 0; j < itemset_num; j++) {
 
-			item = get_token(subset, j, CHAR_ITEMSET_SEP);
+			get_token(&item, subset, j, CHAR_ITEMSET_SEP);
 
 			/* if it is a member of i-1 Itemset */
 			for(k = 0; k < previ->count; k++) {
 
-				prevtoken = get_token(previ->candidate->members,
+				get_token(&prevtoken, previ->candidate->members,
 				                     k, CHAR_ITEMSET_SEP);
 				if(strcmp(item, prevtoken) == 0) {
-					free((char *) prevtoken);
 					break; /* element is frequent */
 				}
-				free((char *) prevtoken);
 			}
 
 			if(k == previ->count) { /* Not a frequent element */
@@ -480,16 +496,14 @@ static int prune_candidates(int itemset_num)
 				prune_item(curri, i);
 				i--;
 				curri->count -= 1;
-				free((char *) item);
 				break;
 			}
-
-			free((char *) item);
 		}
+		free((char *) item);
 		free((char *) subset);
-		free((char *) tmp);
 	}
-
+	free((char *) tmp);
+	free((char *) prevtoken);
 	return curri->count;
 }
 
@@ -499,14 +513,17 @@ static int prune_candidates(int itemset_num)
  * @brief Calculate frequent candidates based on count in Transactions
  * @param itemset_num
  * @param T Total number of transactions
+ * @param row
+ * @param col
  * @return Count of frequent candidates
  * @author SG
  */
-static int calculate_frequent_itemsets(int itemset_num, int T)
+static int calculate_frequent_itemsets(int itemset_num, int T,
+           sqlite3_stmt *(*row)(void), sqlite3_stmt *(*col)(const char *ele))
 {
 	I *lasti;
-	void *alltag, *tmptag; /* Sqlite3 pointer holding query */
-	const char *tname, *fno; /* result string from query */
+	void *rowptr, *colptr; /* Sqlite3 pointer holding query */
+	const char *rowdata, *coldata; /* result string from query */
 	char *token, *item;
 	int iter;
 	int i,j;
@@ -517,96 +534,73 @@ static int calculate_frequent_itemsets(int itemset_num, int T)
 	freqcnt = 0;
 	strcpy(frequent, "");
 	lasti = get_itemset(itemset_num);
+	token = (char *)malloc(strlen(lasti->candidate->members)*sizeof(char));
+	item = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
 
 	/* check each candidate */
 	for(j = 0; j < lasti->count; j++) {
 		lasti->candidate->supportcnt[j] = 0;
-		token = get_token(lasti->candidate->members, j,
-		                  CHAR_ITEMSET_SEP);
+		get_token(&token, lasti->candidate->members, j,
+		          CHAR_ITEMSET_SEP);
 
-		if(itemset_num == 1) {
+		/* for each transaction */
+		rowptr = (*row)();
 
-			/* for each transaction */
-			alltag = get_user_tagname();
-			while ((tname = string_from_stmt(alltag)) != NULL) {
+		while ((rowdata = string_from_stmt(rowptr)) != NULL) {
+			if(itemset_num == 1) {
 				/* Analyze the transaction */
-				tmptag = get_fid_under_tag(tname);
-				while((fno = string_from_stmt(tmptag)) != NULL)
+				colptr = (*col)(rowdata);
+				while((coldata = string_from_stmt(colptr))
+				              != NULL)
 				{
-					if(strcmp(fno, token) == 0) {
+					if(strcmp(coldata, token) == 0) {
 						lasti->candidate->supportcnt[j]
 						     += 1;
-						finalize(tmptag);
+						finalize(colptr);
 						break;
 					}
 				}
-			}
-			/* log_msg("Frequent 1 token %s : %d", token,
-			          lasti->candidate->supportcnt[j]); */
-			if(((float)lasti->candidate->supportcnt[j] / T) >
-			            MINSUP) {
-				if(isfull(frequent, 1)) {
-					/** @todo : traverse link list */
-					log_msg("Insufficient memory to "
-					"generate frequent %d-candidate",
-					itemset_num);
-					free((char *) token);
-					break;
-				}
-				strcat(frequent, token);
-				strcat(frequent, STR_ITEMSET_SEP);
-				lasti->candidate->supportcnt[freqcnt] =
-				       lasti->candidate->supportcnt[j];
-				freqcnt++;
-			}
-		} else {
-			/* for each transaction */
-			alltag = get_user_tagname();
-			while ((tname = string_from_stmt(alltag)) != NULL) {
+			} else {
 				iter = 0;
 				for(i = 0; i < itemset_num; i++) {
 					flag = 0;
-					item = get_item(token, &iter);
+					get_item(&item, token, &iter);
 					/* Analyze the transaction */
-					tmptag = get_fid_under_tag(tname);
-					while((fno = string_from_stmt(tmptag))
-					      != NULL) {
-						if(strcmp(fno, item) == 0) {
-							finalize(tmptag);
+					colptr = (*col)(rowdata);
+					while((coldata = string_from_stmt
+					                 (colptr)) != NULL) {
+						if(strcmp(coldata, item) == 0) {
+							finalize(colptr);
 							flag = 1;
 							break;
 						}
 					}
 					if(flag != 1) {
-						free((char *) item);
 						break;
 					}
-					free((char *) item);
 				}
 				if(flag == 1) {
 					lasti->candidate->supportcnt[j] += 1;
 				}
 			}
-			/* log_msg("Frequent %d token %s : %d",itemset_num,
-			          token, lasti->candidate->supportcnt[j]); */
-			if(((float)lasti->candidate->supportcnt[j] / T) >
-			            MINSUP) {
-				if(isfull(frequent, 1)) {
-					/** @todo : traverse link list */
-					log_msg("Insufficient memory to "
-					"generate frequent %d-candidate",
-					itemset_num);
-					free((char *) token);
-					break;
-				}
-				strcat(frequent, token);
-				strcat(frequent, STR_ITEMSET_SEP);
-				lasti->candidate->supportcnt[freqcnt] =
-				       lasti->candidate->supportcnt[j];
-				freqcnt++;
-			}
 		}
-		free((char *) token);
+
+		/* log_msg("Frequent %d token %s : %d",itemset_num,
+			  token, lasti->candidate->supportcnt[j]); */
+
+		if(((float)lasti->candidate->supportcnt[j] / T) > MINSUP) {
+			if(isfull(frequent, 1)) {
+				/** @todo : traverse link list */
+				log_msg("Insufficient memory to generate "
+				        "frequent %d-candidate", itemset_num);
+				break;
+			}
+			strcat(frequent, token);
+			strcat(frequent, STR_ITEMSET_SEP);
+			lasti->candidate->supportcnt[freqcnt] =
+			       lasti->candidate->supportcnt[j];
+			freqcnt++;
+		}
 	}
 
 	/* log_msg("#%d freq : %s #%d cand : %s\n", freqcnt,
@@ -615,6 +609,8 @@ static int calculate_frequent_itemsets(int itemset_num, int T)
 	strcpy(lasti->candidate->members, frequent);
 	lasti->count = freqcnt;
 
+	free((char *) item);
+	free((char *) token);
 	return lasti->count;
 }
 
@@ -637,15 +633,18 @@ static int get_support_count(char *item, int itemset_num)
 		return -1;
 	}
 
+	token = (char *)malloc(strlen(tmpi->candidate->members) * sizeof(char));
+
 	for(i = 0; i < tmpi->count; i++) {
-		token = get_token(tmpi->candidate->members, i,
+		get_token(&token, tmpi->candidate->members, i,
 		                  CHAR_ITEMSET_SEP);
 		if(strcmp(token,item) == 0) {
 			free((char *) token);
 			return tmpi->candidate->supportcnt[i];
 		}
-		free((char *) token);
 	}
+
+	free((char *) token);
 	return -1;
 }
 
@@ -662,7 +661,7 @@ static int get_support_count(char *item, int itemset_num)
 static int get_confident_subsets(int Nsup, char *members, int itemset_num,
                                    char **sub, int *subcnt,int memsize)
 {
-	char *lhs_itemset = (char *) malloc(strlen(members) * sizeof(char));
+	char *lhs_itemset;
 	char *token;
 
 	float confidence;
@@ -673,6 +672,9 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 		return KW_FAIL;
 	}
 
+	lhs_itemset = (char *) malloc(strlen(members) * sizeof(char));
+	token = (char *)malloc(strlen(members) * sizeof(char));
+
 	/* Calculate subsets */
 	for(i = (itemset_num - 1) ; i >= 0; i--) {
 		strcpy(lhs_itemset, "");
@@ -680,9 +682,8 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 			if(i == j ) {
 				continue;
 			}
-			token = get_token(members, j, CHAR_ITEM_SEP);
+			get_token(&token, members, j, CHAR_ITEM_SEP);
 			strcat(lhs_itemset, token);
-			free((char *) token);
 			strcat(lhs_itemset, STR_ITEM_SEP);
 		}
 		lhs_itemset[strlen(lhs_itemset) - 1] = '\0';
@@ -703,9 +704,11 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 				continue;
 			}
 			if(strlen(*sub) > (memsize - strlen(lhs_itemset) - 1)) {
-				/* log_msg("Insufficient memory to "
-					"generate confident subsets for "
-					"%d-candidate",	itemset_num); */
+				log_msg("Insufficient memory to generate "
+				        "confident subsets for %d-candidate",
+				        itemset_num);
+				free((char *) token);
+				free((char *) lhs_itemset);
 				return KW_ERROR;
 			}
 			strcat(*sub, lhs_itemset);
@@ -714,7 +717,8 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 		}
 	}
 
-	free((char*) lhs_itemset);
+	free((char *) lhs_itemset);
+	free((char *) token);
 	return KW_SUCCESS;
 }
 
@@ -738,16 +742,19 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
 	int i, j, k;
 	unsigned int memsize;
 
+	token = (char *)malloc(strlen(*subsets) * sizeof(char));
+	itemtmp = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
+	subtmp = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
 	memsize = ((pow(2, itemset_num) * (MAX_ITEM_LENGTH + 3)) + 1);
 	rule = (char *) malloc(memsize * sizeof(char));
 	strcpy(rule,"");
 
 	/* For each subset */
 	for(i = 0; i < cnt; i++) {
-		token = get_token(*subsets, i, CHAR_ITEMSET_SEP);
-		if(strlen(rule) > (memsize - MAX_ITEM_LENGTH - 2)) {
-			/* log_msg("Insufficient memory to complete rule for "
-				"%d-candidate",	itemset_num); */
+		get_token(&token, *subsets, i, CHAR_ITEMSET_SEP);
+		if(strlen(rule) > (memsize - (MAX_ITEM_LENGTH * 2))) {
+			log_msg("Insufficient memory to complete rule for "
+				"%d-candidate",	itemset_num);
 			free((char*) token);
 			return rule;
 		}
@@ -756,32 +763,33 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
 		strcat(rule,"->");
 
 		/* for each item in itemset */
-		for(j=0, item_iter = 0; j < itemset_num; j++){
-			itemtmp = get_item(itemset, &item_iter);
+		for(j = 0, item_iter = 0; j < itemset_num; j++){
+			get_item(&itemtmp, itemset, &item_iter);
 			/* for each item in subset */
-			for(k=0, sub_iter=0; k < get_no_of_items(token); k++) {
-				subtmp = get_item(token, &sub_iter);
+			for(k = 0, sub_iter = 0; k < get_no_of_items(token);
+			    k++) {
+				get_item(&subtmp, token, &sub_iter);
 				/* compare each itemset item with every
 				 * subset item */
 				if(strcmp(itemtmp, subtmp)==0) {
 					/* if it is present, do nothing */
-					free((char*) subtmp);
 					break;
 				}
-				free((char*) subtmp);
 			}
 			/* if not present in subset, add item to RHS of rule */
 			if(k == get_no_of_items(token)){
 				strcat(rule, itemtmp);
 				strcat(rule, STR_ITEM_SEP);
 			}
-			if(itemtmp != NULL) free((char*) itemtmp);
 		}
 		rule[strlen(rule) - 1] = '\0';
 		add_rule(token, strrchr(rule, '>') + 1);
 		strcat(rule, STR_ITEMSET_SEP);
-		free((char*) token);
 	}
+
+	free((char*) itemtmp);
+	free((char*) subtmp);
+	free((char*) token);
 	return rule;
 }
 
@@ -810,6 +818,8 @@ static void generate_assoc_rule(int itemset_num)
 	tmpi = get_itemset(itemset_num);
 	memsize = (((pow(2, itemset_num)) - 2) * (MAX_ITEM_LENGTH + 1));
 	subset = (char *) malloc(memsize * sizeof(char));
+	maintoken = (char *)malloc(strlen(tmpi->candidate->members) *
+	                           sizeof(char));
 
 	/* Iterate for all itemsets in Ci */
 	for(i = 0; i < tmpi->count; i++) {
@@ -818,7 +828,7 @@ static void generate_assoc_rule(int itemset_num)
 		strcpy(subset, "");
 
 		/* For each itemset */
-		maintoken = get_token(tmpi->candidate->members, i,
+		get_token(&maintoken, tmpi->candidate->members, i,
 		                      CHAR_ITEMSET_SEP);
 		Nsup = get_support_count(maintoken, itemset_num); /* Support */
 
@@ -829,22 +839,26 @@ static void generate_assoc_rule(int itemset_num)
 		if(status == KW_SUCCESS) {
 			/* Recursively calculate i-1 subsets */
 			for(j = 0; j < subset_cnt; j++) {
-				token = get_token(subset, j, CHAR_ITEMSET_SEP);
+				token = (char *)malloc(strlen(subset) *
+				                       sizeof(char));
+				get_token(&token, subset, j, CHAR_ITEMSET_SEP);
 
 				/*log_msg("%d %d",get_no_of_items(token),
 				                  itemset_num);*/
 				/* Limit to anslyze subgroups */
 				if(get_no_of_items(token) <=
 				   (itemset_num * RULE_LEVEL)) {
+					free((char *)token);
 					break;
 				}
 				status = get_confident_subsets(Nsup, token,
 				         get_no_of_items(token), &subset,
 				         &subset_cnt, memsize);
-				free((char*) token);
 				if(status != KW_SUCCESS) {
+					free((char *)token);
 					break;
 				}
+				free((char*) token);
 			}
 		}
 
@@ -853,58 +867,42 @@ static void generate_assoc_rule(int itemset_num)
 		                     subset_cnt);
 
 		log_msg("Rule for %s : %s", maintoken ,rule);
-		//log_msg("Rule for %s : %s", maintoken ,subset);
 		free((char *) rule);
-		free((char *) maintoken);
 	}
 
+	free((char *) maintoken);
 	free((char *) subset);
 }
 
-/*------------------------------ APRIORI -------------------------------------*/
+/*------------------------------ GENERAL -------------------------------------*/
 
 /**
  * @brief Display candidates
  * @param itemset_num
+ * @param support true : Display support count, false : Dont display supportcnt
  * @return void
  * @author SG
  */
-static void display_candidate(int itemset_num)
+static void display_candidate(int itemset_num, bool support)
 {
 	I *tmpi;
 	char *token;
 	int i;
 
 	tmpi = get_itemset(itemset_num);
+	token = (char *)malloc(strlen(tmpi->candidate->members) * sizeof(char));
 
 	for(i = 0; i < tmpi->count; i++) {
-		token = get_token(tmpi->candidate->members, i,
+		get_token(&token, tmpi->candidate->members, i,
 		                  CHAR_ITEMSET_SEP);
-		log_msg("%d] %s", i, token);
-		free((char *) token);
+		if(support == false) {
+			log_msg("%d] %s", i, token);
+		} else {
+			log_msg("%d] %s\t%d", i, token,
+			        tmpi->candidate->supportcnt[i]);
+		}
 	}
-}
-
-/**
- * @brief Display candidates
- * @param itemset_num
- * @return void
- * @author SG
- */
-static void display_candidate_with_supcnt(int itemset_num)
-{
-	I *tmpi;
-	char *token;
-	int i;
-
-	tmpi = get_itemset(itemset_num);
-
-	for(i = 0; i < tmpi->count; i++) {
-		token = get_token(tmpi->candidate->members, i,
-		                  CHAR_ITEMSET_SEP);
-		log_msg("%d] %s\t%d",i, token ,tmpi->candidate->supportcnt[i]);
-		free((char *) token);
-	}
+	free((char *) token);
 }
 
 /**
@@ -929,34 +927,35 @@ static void free_itemsets(void)
 	}
 }
 
+/*------------------------------ APRIORI -------------------------------------*/
+
 /**
- * @brief Apriori Algorithm
- * @param void
+ * @brief Apriori Algorithm Implementor
+ * @param num_transactions
+ * @param files
+ * @param row
+ * @param col
  * @return void
  * @author SG
  */
-void apriori(void)
+static void apriori_main(int num_transactions, sqlite3_stmt *(*files)(void),
+            sqlite3_stmt *(*row)(void), sqlite3_stmt *(*col)(const char *t))
 {
-	int num_transactions; /* number of transactions to be analyzed */
-
 	int itemset_num; /* the current itemset being looked at */
 	int candidate_cnt, prune_cnt;
 
-	log_msg("\nInitializing Apriori Algorithm");
-
-	num_transactions = count_user_tags(); /* count of all tags in kwest */
 	itemset_num = 1;
 	headi = NULL;
 
 	do
 	{
 		log_msg("\nCandidate %d-itemsets : ", itemset_num);
-		candidate_cnt = generate_candidates(itemset_num);
+		candidate_cnt = generate_candidates(itemset_num, files);
 		if (candidate_cnt == 0) {
 			log_msg("No candidates generated");
 			break;
 		}
-		display_candidate(itemset_num);
+		display_candidate(itemset_num, false);
 
 		if(itemset_num > 1) {
 			prune_cnt = prune_candidates(itemset_num);
@@ -967,18 +966,18 @@ void apriori(void)
 			if(candidate_cnt != prune_cnt) {
 				log_msg("%d-itemsets after Pruning : ",
 				         itemset_num);
-				display_candidate(itemset_num);
+				display_candidate(itemset_num, false);
 			}
 		}
 
 		log_msg("Frequent %d-itemsets : ", itemset_num);
 		candidate_cnt = calculate_frequent_itemsets(itemset_num,
-		                 num_transactions);
+		                 num_transactions, row, col);
 		if (candidate_cnt == 0) {
 			log_msg("No frequent candidate identified");
 			break;
 		}
-		display_candidate_with_supcnt(itemset_num);
+		display_candidate(itemset_num, true);
 
 		if(itemset_num > 1) {
 			log_msg("Assocaition Rule %d-itemsets : ", itemset_num);
@@ -987,9 +986,40 @@ void apriori(void)
 
 		itemset_num++;
 
-	}while (candidate_cnt > 1);
+	}while (candidate_cnt > 0);
 	/* If there are <=1 frequent items, then its the end */
-	//get_file_suggestions("MyBest");
+
 	free_itemsets();
+}
+
+/**
+ * @brief Using Apriori to suggest files
+ * @param void
+ * @return void
+ * @author SG
+ */
+static void apriori_files(void)
+{
+	int num_transactions; /* number of transactions to be analyzed */
+
+	num_transactions = count_user_tags(); /* count of all tags in kwest */
+
+	apriori_main(num_transactions, get_user_tagged_files, get_user_tagname,
+	             get_fid_under_tag);
+}
+
+/**
+ * @brief Apriori Algorithm Main Function
+ * @param void
+ * @return void
+ * @author SG
+ */
+void apriori(void)
+{
+	log_msg("\nInitializing Apriori Algorithm");
+
+	log_msg("\nFile Suggestions");
+	apriori_files();
+
 	log_msg("\nTerminating Apriori Algorithm\n");
 }

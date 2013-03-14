@@ -29,6 +29,7 @@
 
 #define MAX_ITEMSET_LENGTH 1024
 #define MAX_ITEM_LENGTH 5
+#define MIN_ITEM_LENGTH 3
 
 #define CHAR_ITEMSET_SEP '|'
 #define CHAR_ITEM_SEP ','
@@ -38,7 +39,7 @@
 
 typedef struct Candidate{
 	char members[MAX_ITEMSET_LENGTH];
-	int supportcnt[(int)(MAX_ITEMSET_LENGTH / (MAX_ITEM_LENGTH + 1))];
+	int supportcnt[(int)(MAX_ITEMSET_LENGTH / (MIN_ITEM_LENGTH + 1))];
 	struct Candidate *nextc;
 }C;
 
@@ -53,31 +54,36 @@ I *headi;
 /*
  * Database Functions
  *
+ * FILE SUGGESTIONS
  * generate_candidates :
- ** 	get_user_tagged_files
- * 	string_from_stmt
+ ** 	sqlite3 stmt *get_user_tagged_files(void)
  *
  * calculate_frequent_itemsets :
- ** 	get_user_tagname
- ** 	get_fid_under_tag
- * 	finalize
- *
- * complete_rule :
- * 	add_rule
+ ** 	sqlite3 stmt *get_user_tagname(void)
+ ** 	sqlite3_stmt *get_fid_under_tag(const char *tagname)
  *
  * apriori :
- ** 	count_user_tags
+ ** 	int count_user_tags(void)
+ *
+ *
+ * GENERAL
+ * complete_rule :
+ * 	add_rule(char *para1, char *para2)
+ *
+ * Others :
+ * 	char *string_from_stmt(sqlite3_stmt * stmt)
+ * 	void finalize(sqlite3_stmt * stmt)
  */
 
 /*
  * Returns new token separated by separator
  */
-char *get_token(char *source_str ,int tokenno, char separator);
+void get_token(char **token, char *source_str ,int tokenno, char separator);
 
 /*
  * Returns individual items from a token
  */
-char *get_item(char *token,int *item_iter);
+void get_item(char **item, char *token,int *item_iter);
 
 /*
  * Total number of items in token

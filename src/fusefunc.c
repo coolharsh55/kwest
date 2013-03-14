@@ -173,19 +173,21 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	/** get suggestions under current path */
 	suggest = get_file_suggestions(strrchr(path,'/') + 1);
 	if (suggest != NULL) {
-		int i =0;
-		char *entry = NULL;
+		int i = 0;
+		char *entry;
+		entry = (char *)malloc(strlen(suggest) * sizeof(char));
 		do {
-			entry = get_token(suggest,i,',');
-			if (strcmp(entry,"") == 0) {
+			get_token(&entry, suggest, i, ',');
+			if (strcmp(entry, "") == 0) {
 				break;
 			}
 			strcpy(buffer, "SUGGESTED - ");
 			strcat(buffer, entry);
 			filler(buf, buffer, &st, 0);
-			free(entry);
 			i++;
-		} while(entry != NULL);
+		} while(1);
+		free((char *) entry);
+		free((char *) suggest);
 	} else {
 		log_msg("SUGGEST NULL");
 	}

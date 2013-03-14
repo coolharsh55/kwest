@@ -1,3 +1,8 @@
+**2013 Mar 14**
+refactor(generalize) apriori to allow extendibility in use
+fixed major apriori memory leaks, invalid reads, invalid writes
+optimize apriori for memory allocation/deallocation
+
 **2013 Mar 12**
 Set limit for rules generation in apriori
 Set boundary conditions to check string length in apriori
