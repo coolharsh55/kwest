@@ -69,7 +69,7 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	if(strlen(path)>10) {
 		pre = strdup(strrchr(path,'/'));
 		*(pre + 10) = '\0';
-		log_msg("%s",(strcmp(pre,"/SUGGESTED" ) == 0)?"SUGGEST":"NOSUGGEST");
+		log_msg("%s",(strcmp(pre,"/SUGGESTED" ) == 0)?"SUGGESTED":"NOSUGGEST");
 		if(strcmp(pre,"/SUGGESTED" ) == 0) {
 			stbuf->st_mode= S_IFREG | KW_STFIL;
 			return 0;
@@ -170,7 +170,8 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			break;
 		}
 	}
-	/** get suggestions under current path */
+
+	/** get File suggestions under current path */
 	suggest = get_file_suggestions(strrchr(path,'/') + 1);
 	if (suggest != NULL) {
 		int i = 0;
@@ -181,15 +182,33 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			if (strcmp(entry, "") == 0) {
 				break;
 			}
-			strcpy(buffer, "SUGGESTED - ");
+			strcpy(buffer, "SUGGESTEDFILE - ");
 			strcat(buffer, entry);
 			filler(buf, buffer, &st, 0);
 			i++;
 		} while(1);
 		free((char *) entry);
 		free((char *) suggest);
-	} else {
-		log_msg("SUGGEST NULL");
+	}
+
+	/** get Tag suggestions under current path */
+	suggest = get_tag_suggestions(strrchr(path,'/') + 1);
+	if (suggest != NULL) {
+		int i = 0;
+		char *entry;
+		entry = (char *)malloc(strlen(suggest) * sizeof(char));
+		do {
+			get_token(&entry, suggest, i, ',');
+			if (strcmp(entry, "") == 0) {
+				break;
+			}
+			strcpy(buffer, "SUGGESTEDTAG - ");
+			strcat(buffer, entry);
+			filler(buf, buffer, &st, 0);
+			i++;
+		} while(1);
+		free((char *) entry);
+		free((char *) suggest);
 	}
 
 	return 0;

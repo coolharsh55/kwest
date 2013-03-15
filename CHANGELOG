@@ -1,3 +1,6 @@
+**2013 Mar 15**
+Added Apriori Implementation: Show tag suggestions while browsing
+
 **2013 Mar 14**
 refactor(generalize) apriori to allow extendibility in use
 fixed major apriori memory leaks, invalid reads, invalid writes
@@ -70,7 +73,7 @@ calls database close, logfile close on fs unmount
 Used stdbool.h as per c99 standard to define the boolean type
 
 **2013 Jan 25**
-Implemented function to Check Path Validity 
+Implemented function to Check Path Validity
 Refactor dbkey, extract_audio_taglib files
 Convert extracted tags to title case
 

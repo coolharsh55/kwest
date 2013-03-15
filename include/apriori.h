@@ -23,6 +23,9 @@
 #ifndef APRIORI_H_INCLUDED
 #define APRIORI_H_INCLUDED
 
+#define FILES 1
+#define TAGS 2
+
 #define MINSUP 0.4
 #define MINCONF 0.5
 #define RULE_LEVEL 0.5
@@ -50,30 +53,6 @@ typedef struct Itemset{
 	struct Itemset *nexti;
 }I;
 I *headi;
-
-/*
- * Database Functions
- *
- * FILE SUGGESTIONS
- * generate_candidates :
- ** 	sqlite3 stmt *get_user_tagged_files(void)
- *
- * calculate_frequent_itemsets :
- ** 	sqlite3 stmt *get_user_tagname(void)
- ** 	sqlite3_stmt *get_fid_under_tag(const char *tagname)
- *
- * apriori :
- ** 	int count_user_tags(void)
- *
- *
- * GENERAL
- * complete_rule :
- * 	add_rule(char *para1, char *para2)
- *
- * Others :
- * 	char *string_from_stmt(sqlite3_stmt * stmt)
- * 	void finalize(sqlite3_stmt * stmt)
- */
 
 /*
  * Returns new token separated by separator

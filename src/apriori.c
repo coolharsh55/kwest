@@ -732,7 +732,7 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
  * @author SG
  */
 static char *complete_rule(char *itemset, int itemset_num, char **subsets,
-                            int cnt)
+                            int cnt, int type)
 {
 	char *rule;
 	int item_iter, sub_iter;
@@ -745,14 +745,15 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
 	token = (char *)malloc(strlen(*subsets) * sizeof(char));
 	itemtmp = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
 	subtmp = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
-	memsize = ((pow(2, itemset_num) * (MAX_ITEM_LENGTH + 3)) + 1);
+
+	memsize = ((pow(2, itemset_num) * (MAX_ITEM_LENGTH + 4)) + 1);
 	rule = (char *) malloc(memsize * sizeof(char));
 	strcpy(rule,"");
 
 	/* For each subset */
 	for(i = 0; i < cnt; i++) {
 		get_token(&token, *subsets, i, CHAR_ITEMSET_SEP);
-		if(strlen(rule) > (memsize - (MAX_ITEM_LENGTH * 2))) {
+		if(strlen(rule) > (memsize - (MAX_ITEM_LENGTH * 3))) {
 			log_msg("Insufficient memory to complete rule for "
 				"%d-candidate",	itemset_num);
 			free((char*) token);
@@ -783,8 +784,9 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
 			}
 		}
 		rule[strlen(rule) - 1] = '\0';
-		add_rule(token, strrchr(rule, '>') + 1);
-		strcat(rule, STR_ITEMSET_SEP);
+		add_rule(type, token, (strrchr(rule, '>') + 1));
+		rule[strlen(rule) - 1] = CHAR_ITEMSET_SEP;
+
 	}
 
 	free((char*) itemtmp);
@@ -799,7 +801,7 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
  * @return void
  * @author SG
  */
-static void generate_assoc_rule(int itemset_num)
+static void generate_assoc_rule(int itemset_num, int type)
 {
 	I *tmpi;
 	char *maintoken, *token;
@@ -816,7 +818,7 @@ static void generate_assoc_rule(int itemset_num)
 	}
 
 	tmpi = get_itemset(itemset_num);
-	memsize = (((pow(2, itemset_num)) - 2) * (MAX_ITEM_LENGTH + 1));
+	memsize = ((pow(2, itemset_num)) * ((MAX_ITEM_LENGTH * itemset_num) + 1));
 	subset = (char *) malloc(memsize * sizeof(char));
 	maintoken = (char *)malloc(strlen(tmpi->candidate->members) *
 	                           sizeof(char));
@@ -864,7 +866,7 @@ static void generate_assoc_rule(int itemset_num)
 
 		/* Complete association rule */
 		rule = complete_rule(maintoken, itemset_num, &subset,
-		                     subset_cnt);
+		                     subset_cnt, type);
 
 		log_msg("Rule for %s : %s", maintoken ,rule);
 		free((char *) rule);
@@ -939,7 +941,8 @@ static void free_itemsets(void)
  * @author SG
  */
 static void apriori_main(int num_transactions, sqlite3_stmt *(*files)(void),
-            sqlite3_stmt *(*row)(void), sqlite3_stmt *(*col)(const char *t))
+            sqlite3_stmt *(*row)(void), sqlite3_stmt *(*col)(const char *t),
+            int type)
 {
 	int itemset_num; /* the current itemset being looked at */
 	int candidate_cnt, prune_cnt;
@@ -981,7 +984,7 @@ static void apriori_main(int num_transactions, sqlite3_stmt *(*files)(void),
 
 		if(itemset_num > 1) {
 			log_msg("Assocaition Rule %d-itemsets : ", itemset_num);
-			generate_assoc_rule(itemset_num);
+			generate_assoc_rule(itemset_num, type);
 		}
 
 		itemset_num++;
@@ -1005,7 +1008,23 @@ static void apriori_files(void)
 	num_transactions = count_user_tags(); /* count of all tags in kwest */
 
 	apriori_main(num_transactions, get_user_tagged_files, get_user_tagname,
-	             get_fid_under_tag);
+	             get_fid_under_tag, FILES);
+}
+
+/**
+ * @brief Using Apriori to suggest tags
+ * @param void
+ * @return void
+ * @author SG
+ */
+static void apriori_tags(void)
+{
+	int num_transactions; /* number of transactions to be analyzed */
+
+	num_transactions = count_user_tags(); /* count of all tags in kwest */
+
+	apriori_main(num_transactions, get_user_tagged_tags, get_user_tagname,
+	             get_tid_under_tag, TAGS);
 }
 
 /**
@@ -1020,6 +1039,9 @@ void apriori(void)
 
 	log_msg("\nFile Suggestions");
 	apriori_files();
+
+	log_msg("\nTag Suggestions");
+	apriori_tags();
 
 	log_msg("\nTerminating Apriori Algorithm\n");
 }

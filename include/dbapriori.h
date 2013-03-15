@@ -25,7 +25,7 @@
 
 #include <sqlite3.h>
 
-/* -------------------- Apriori Functions --------------------- */
+/* ---------------------------- GENERAL ------------------------------------- */
 
 /*
  * Count of all user created tags in kwest
@@ -38,19 +38,35 @@ int count_user_tags(void);
 sqlite3_stmt *get_user_tagname(void);
 
 /*
+ * Add association rule to database
+ */
+int add_rule(int type, char *para1, char *para2);
+
+/* ---------------------------- FILE SUGGESTIONS----------------------------- */
+
+/*
  * Get fno of user tagged files
  */
 sqlite3_stmt *get_user_tagged_files(void);
 
 /*
- * Get fno of user tagged files
- */
-int add_rule(char *para1, char *para2);
-
-/*
  * Get file suggestions using apriori association rules
  */
 char *get_file_suggestions(char *tagname);
+
+/* ---------------------------- TAG SUGGESTIONS ----------------------------- */
+
+/*
+ * Get tno of user tagged tags
+ */
+sqlite3_stmt *get_user_tagged_tags(void);
+
+/*
+ * Get tag suggestions using apriori association rules
+ */
+char *get_tag_suggestions(char *tagname);
+
+/* ----------------------------- OTHERS ------------------------------------- */
 
 /*
  * Finalize sqlite statement

@@ -72,9 +72,14 @@ int untag_file(const char *t,const char *f);
 sqlite3_stmt *get_fname_under_tag(const char *t);
 
 /*
- * Return list of files associated to given tag
+ * Return list of file id associated to given tag
  */
 sqlite3_stmt *get_fid_under_tag(const char *t);
+
+/*
+ * Return list of tag id associated to given tag
+ */
+sqlite3_stmt *get_tid_under_tag(const char *t);
 
 /*
  * Return list of tags associated with a given file

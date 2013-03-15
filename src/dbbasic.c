@@ -561,7 +561,39 @@ sqlite3_stmt *get_fid_under_tag(const char *t)
 	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 
 	if(status != SQLITE_OK){ /* Error Preparing query */
-		log_msg("get_fname_under_tag : %s",ERR_PREP_QUERY);
+		log_msg("get_tid_under_tag : %s",ERR_PREP_QUERY);
+		return NULL;
+	}
+
+	return stmt;
+}
+
+/**
+ * @brief Return list of tag id associated to given tag
+ * @param t - tagname
+ * @return sqlite3_stmt pointer : SUCCESS, NULL : FAIL
+ * @author SG
+ */
+sqlite3_stmt *get_tid_under_tag(const char *t)
+{
+	sqlite3_stmt *stmt;
+	char query[QUERY_SIZE];
+	int status;
+	int tno;
+
+	tno = get_tag_id(t); /* Get Tag ID */
+	if(tno == KW_FAIL){ /* Return if Tag not found */
+		log_msg("get_tid_under_tag : %s%s",ERR_TAG_NOT_FOUND,t);
+		return NULL;
+	}
+
+	/* Query to get all files associated with tag t */
+	sprintf(query,"select distinct t1 from TagAssociation where t2 = %d;",
+	        tno);
+	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+
+	if(status != SQLITE_OK){ /* Error Preparing query */
+		log_msg("get_tid_under_tag : %s",ERR_PREP_QUERY);
 		return NULL;
 	}
 
