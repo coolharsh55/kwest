@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-/*
+
 static int dump_metadata(struct kw_metadata *s) 
 {
 	if (s->do_init != NULL) {
@@ -16,7 +16,7 @@ static int dump_metadata(struct kw_metadata *s)
 	printf("tagc:%d\n", s->tagc);
 	for (int ret = 0 ; ret <s->tagc ; ret++) {
 		printf("tagtype%d:%s\n",ret, s->tagtype[ret]);
-		printf("tagv%d:%s\n",ret, s->tagv[ret]);
+		printf("tagv%d:%s\n",ret, s->tagv[ret]==NULL?"NULL":s->tagv[ret]);
 	}
 	if (s->obj != NULL) {
 		printf("metadata has embedded object\n");
@@ -24,7 +24,7 @@ static int dump_metadata(struct kw_metadata *s)
 	printf("-------------------------------------------------\n");
 	return KW_SUCCESS;
 }
-*/
+
 static int plugin_extractor(const char *filepath) {
 	FILE *extractinfo = NULL;
 	char buffer[512];
@@ -117,19 +117,21 @@ int metadata_extract(const char *file, struct kw_metadata *s)
 	
 	while (head != NULL) {
 		if (head->plugin->is_of_type(file) == true) {
+			printf("plugin used: %s\n",head->plugin->name);
 			int ret = head->plugin->p_metadata_extract(file, s);
 			if (ret == KW_SUCCESS) {
 				/*dump_metadata(s);*/
 				return KW_SUCCESS;
 			} else {
-				return KW_FAIL;
+				//return KW_FAIL;
 			}
 		} else {
-			if (plugin_poppler(file)!= KW_SUCCESS) {
+		/*	if (plugin_poppler(file)!= KW_SUCCESS) {
 				if (plugin_extractor(file) != KW_SUCCESS) {
 					return KW_FAIL;
 				}
 			}
+			*/
 		}
 		head = head->next;
 	}

@@ -19,6 +19,7 @@
 static int do_on_init(void *obj)
 {
 	(void)obj;
+	printf("do_on_init\n");
 	return KW_SUCCESS;
 }
 
@@ -26,6 +27,7 @@ static int initializations(void)
 {
 	/* add plugin mime types to metadata table
 	log_msg("plugin extractor has added database entries\n"); */
+	printf("initializations\n");
 	return KW_SUCCESS;
 }
 
@@ -33,7 +35,7 @@ static int do_on_cleanup(struct kw_metadata *s)
 {
 	int i=0;
 	char *memchar = NULL;
-	
+	printf("do_on_cleanup\n");
 	if (s->type != NULL) {
 		free(s->type);
 	}
@@ -61,87 +63,133 @@ static int do_on_cleanup(struct kw_metadata *s)
 static char *format_string(char *string)
 {
 	int i;
-	
+	char *strptr = string;
+	char *cleanend = NULL;
 	if (string == NULL || string[0] == '\0') {
 		return string;
 	}
-	string[0] = (char)toupper((int)string[0]);
 	
-	for (i = 1; string[i] != '\0'; i++) {
-		if (!isalpha(string[i-1])) {
-			string[i] = (char)toupper((int)string[i]);
+	while (*strptr != ':') {
+		strptr++; 
+	} strptr++;
+	while (*strptr == ' ' || *strptr == '\t') {
+		strptr++;
+	}
+	cleanend = strptr;
+	while (*cleanend != '\0') {
+		cleanend++; 
+	} cleanend--;
+	while (*cleanend == ' ' || *cleanend == '\t' || *cleanend == '\n')  {
+		cleanend--;
+	}
+	cleanend++;
+	*cleanend = '\0';
+
+	strptr[0] = (char)toupper((int)strptr[0]);
+	
+	for (i = 1; strptr[i] != '\0'; i++) {
+		if (!isalpha(strptr[i-1])) {
+			strptr[i] = (char)toupper((int)strptr[i]);
 		} else {
-			string[i] = (char)tolower((int)string[i]);
+			strptr[i] = (char)tolower((int)strptr[i]);
 		}
-		if (string[i] == '/' || string[i] == '\\') {
-		string[i] = ' ';
+		if (strptr[i] == '/' || strptr[i] == '\\') {
+		strptr[i] = ' ';
 		}
 	}
-	/* Remove End of string White Spaces */
-	while (i-- > 0 && string[i] == ' '); string[++i]='\0';
-	
-	return string;
+
+	return strptr;
 }
 
-static int pipepdfinfo(const char *filename, char *buffer)
+static int pipepdfinfo(const char *filename, struct kw_metadata *s)
 {
-	char command[20];
+	char buffer[512];
+	char command[1024];
 	FILE *pdfinfo = NULL;
-	int i=1;
+	int i=0;
 	sprintf(command, "pdfinfo %s", filename);
-	pdfinfo = popen("date", "r");
-	printf("pdfinfo open\n");
+	pdfinfo = popen(command, "r");
 	if(pdfinfo == NULL){
 		log_msg("Could not open pipe for output");
 		return KW_ERROR;
 	}
-	printf("pdfinfo ready\n");
+	/* kw_metadata == NULL -> is_of_type */
+	if (s == NULL) {
+		if (fgets(buffer, 512 , pdfinfo) == NULL) {
+			return KW_ERROR;
+		} else {
+			return KW_SUCCESS;
+		}
+	}
+	/* else extract metadata into structure */
 	while(fgets(buffer, 512 , pdfinfo) != NULL) {
-		printf("pdfinfo %s \n", buffer);
+		//printf("%d:pdfinfo %s",++i,buffer);
+		if (strstr(buffer, "Title:") == buffer) {
+			//s->tagv[0] = strdup(buffer);
+			printf("%d-%s@",strlen(buffer),buffer);
+			format_string(buffer);
+		} else if (strstr(buffer, "Subject:") == buffer) {
+			//s->tagv[0] = strdup(buffer);
+		} else if (strstr(buffer, "Author:") == buffer) {
+			//s->tagv[0] = strdup(buffer);
+		} else if(strstr(buffer, "Publisher:") == buffer) {
+			//s->tagv[0] = strdup(buffer);
+		}
 		log_msg("%2d:%s",i++,buffer); 
 	}
 	
-	if (pclose(pdfinfo) != 0) {
-		log_msg(" Error: Failed to close command stream");
+	if (i == 0) {
+		return KW_ERROR;
 	}
-	printf("pdfinfo closed\n");
+	
+	if (pclose(pdfinfo) != 0) {
+		printf(" Error: Failed to close command stream");
+	}
 	return KW_SUCCESS;
 }
 
 static bool is_of_type(const char *filepath)
 {
-	char buffer[512];
-	pipepdfinfo(filepath, buffer);
+	printf("is_of_type : %s\n",filepath);
+	if (pipepdfinfo(filepath, NULL) == KW_SUCCESS) {
+		printf("file has PDF metadata\n");
+		return true;
+	} else {
+		printf("file does not have PDF metadata\n");
+	}
 	return false;
-	return true; /*extract returns data */
 }
 
 static int metadata_extract(const char *filename, struct kw_metadata *s)
 {
 	char *memchar = NULL;
 	char buffer[1024];
-	
-	if (!is_of_type(filename)) {
-		return KW_ERROR;
-	}
+	int ret = KW_ERROR;
+	printf("metadata_extract\n");
 	
 	s->obj = NULL;
 	s->do_cleanup = &do_on_cleanup;
 	
-	s->type = strdup("Audio");
+	s->type = strdup("PDF");
 	s->tagc = 4;
 	s->tagtype = (char **)malloc(4 * sizeof(char *));
 	s->tagv = (char **)malloc(4 * sizeof(char *));
 	
 	memchar = strdup("title");
 	s->tagtype[0] = memchar;
-	memchar = strdup("artist");
+	s->tagv[0] = NULL;
+	memchar = strdup("subject");
 	s->tagtype[1] = memchar;
-	memchar = strdup("album");
+	s->tagv[1] = NULL;
+	memchar = strdup("author");
 	s->tagtype[2] = memchar;
-	memchar = strdup("genre");
+	s->tagv[2] = NULL;
+	memchar = strdup("publisher");
 	s->tagtype[3] = memchar;
+	s->tagv[3] = NULL;
 	
+	ret = pipepdfinfo(filename, s);
+	/*
 	memchar = strdup("test");
 	memchar = format_string(memchar);
 	s->tagv[0] = memchar;
@@ -154,16 +202,18 @@ static int metadata_extract(const char *filename, struct kw_metadata *s)
 	memchar = strdup("test");
 	memchar = format_string(memchar);
 	s->tagv[3] = memchar;
+	*/
 	
 	s->obj = NULL;
 	s->do_init = &do_on_init;
 	s->do_cleanup = &do_on_cleanup;
 	
-	return KW_SUCCESS;
+	return ret;
 }
 
 static int metadata_update(const char *filename, struct kw_metadata *s)
 {
+	printf("metadata_update\n");
 	if (!is_of_type(filename)) {		
 		return KW_ERROR;
 	}
@@ -193,14 +243,14 @@ static int on_unload(struct plugin_extraction_entry *plugin)
 	return KW_SUCCESS;
 }
 
-struct plugin_extraction_entry *load_extractor_plugin()
+struct plugin_extraction_entry *load_pdfinfo_plugin()
 {
 	static struct plugin_extraction_entry *plugin = NULL;
 	if (plugin == NULL) {
 		plugin = (struct plugin_extraction_entry *) 
 		         malloc(sizeof(struct plugin_extraction_entry));
-		plugin->name = strdup("extractor");
-		plugin->type = strdup("Multi");
+		plugin->name = strdup("pdfinfo");
+		plugin->type = strdup("PDF");
 		plugin->obj  = NULL;
 		//plugin->thisplugin = this;
 		plugin->is_of_type         = &is_of_type;
