@@ -182,7 +182,4 @@ char *get_file_suggestions(char *tagname);
  */
 void finalize(sqlite3_stmt * stmt);
 
-int associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname);
-
 #endif

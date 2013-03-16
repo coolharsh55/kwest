@@ -1,4 +1,4 @@
-SOURCES = fusefunc.c dbfuse.c logging.c dbbasic.c dbinit.c dbkey.c metadata_extract.c plugins_extraction.c import.c apriori.c kwest_main.c test_pdfinfo.c
+SOURCES = fusefunc.c dbfuse.c logging.c dbbasic.c dbinit.c dbkey.c dbplugin.c metadata_extract.c plugins_extraction.c import.c apriori.c kwest_main.c test_pdfinfo.c
 
 LIBS = -L$(LIB) -lfuse -lsqlite3 -lkw_taglib -lkw_pdfinfo -ltag_c -ltag -lm -Wl,-rpath=.
 
@@ -9,7 +9,7 @@ EXE = kwest
 
 CC = gcc
 
-CCFLAGS = -g -Wall -Wextra -std=gnu99 -pedantic-errors -I$(INCLUDE)
+CCFLAGS = -g3 -Wall -Wextra -std=gnu99 -pedantic-errors -I$(INCLUDE)
 
 OFLAGS = -c
 
@@ -46,10 +46,9 @@ kw_pdfinfo: plugin_pdfinfo
 
 plugin_pdfinfo: plugin_pdfinfo.o
 	gcc -g -shared -I$(INCLUDE) -Wl,-soname,libkw_pdfinfo.so -o $(LIB)/libkw_pdfinfo.so -ltag -ltag_c plugin_pdfinfo.o
-	
+        
 plugin_pdfinfo.o: plugin_pdfinfo.c
 	gcc -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -std=gnu99 -fPIC -ltag_c -c plugin_pdfinfo.c
-
 
 c: clean
 
