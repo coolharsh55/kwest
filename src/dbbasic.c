@@ -186,6 +186,7 @@ int add_file(const char *abspath)
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL
  * @author SG HP
  */
+ /* UNUSED
 static int insert_metadata_file(int fno, struct kw_metadata *kw_M)
 {
 	sqlite3_stmt *stmt;
@@ -218,6 +219,7 @@ static int insert_metadata_file(int fno, struct kw_metadata *kw_M)
 	sqlite3_finalize(stmt);
 	return KW_FAIL;
 }
+* */
 
 /**
  * @brief Extract and add metadata for file in kwest
@@ -229,6 +231,7 @@ static int insert_metadata_file(int fno, struct kw_metadata *kw_M)
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname)
 {
+	(void)fno;
 	int status;
 	struct kw_metadata kw_M;
 

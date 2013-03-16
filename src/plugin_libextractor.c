@@ -6,7 +6,7 @@
  */
  
 #include "plugins_extraction.h"
-#include "plugin_pdfinfo.h"
+#include "plugin_libextractor.h"
 #include "flags.h"
 #include "dbbasic.h"
 #include "dbplugin.h"

@@ -82,12 +82,18 @@ void add_metadata_type(char *mime, char *metadata)
 void associate_file_metadata(const char *mime,const char *tagname,
                             const char *fname)
 {
+	bool is_tag_empty = false;
 	char *newtag=NULL;
 	int taglength = 0;
-
-	if( (strcmp(tagname,"") == 0) || /* No meta information */
+	/* No meta information */
+	if (tagname == NULL) {
+		is_tag_empty = true;
+	} else if ( (strcmp(tagname,"") == 0) || 
 	    (strcmp(mime,tagname)==0) ||
-	    (strcmp(tagname,TAG_UNKNOWN)==0) ){
+	    (strcmp(tagname,TAG_UNKNOWN)==0) ) {
+		is_tag_empty = true;
+	}
+	if (is_tag_empty == true) {
 		taglength = strlen(TAG_UNKNOWN) + strlen(mime) + 2;
 		newtag = (char *)malloc(taglength * sizeof(char));
 		newtag = strcpy(newtag, TAG_UNKNOWN);

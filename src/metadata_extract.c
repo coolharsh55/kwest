@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-
+/*
 static int dump_metadata(struct kw_metadata *s) 
 {
 	if (s->do_init != NULL) {
@@ -24,91 +24,7 @@ static int dump_metadata(struct kw_metadata *s)
 	printf("-------------------------------------------------\n");
 	return KW_SUCCESS;
 }
-
-static int plugin_extractor(const char *filepath) {
-	FILE *extractinfo = NULL;
-	char buffer[512];
-	char command[20];
-	void *rval = NULL;
-	
-	/* code type 1 : get all possible info extract has to offer */
-	/*sprintf(command, "extract %s", filepath);
-	extractinfo = popen(command, "r");
-	
-	if (extractinfo == NULL){
-		return KW_FAIL;
-	}
-
-	rval = fgets(buffer, 512 , extractinfo);
-	if (rval != NULL) {
-		rval = fgets(buffer, 512 , extractinfo);
-	}
-	if (rval == NULL) {
-		printf("file mimetype not recognized by extract tool\n");
-		return KW_FAIL;
-	}
-	
-	while (rval != 0) {
-		rval = fgets(buffer, 512 , extractinfo);
-		printf("%s",buffer); 
-	} */
-	
-	/* code type 2 : get mimetype only */
-	sprintf(command, "extract -p mimetype %s", filepath);
-	extractinfo = popen(command, "r");
-	
-	if (extractinfo == NULL){
-		return KW_FAIL;
-	}
-
-	rval = fgets(buffer, 512 , extractinfo);
-	if (rval != NULL) {
-		rval = fgets(buffer, 512 , extractinfo);
-	}
-	if (rval == NULL) {
-		printf("file mimetype not recognized by extract tool\n");
-		return KW_FAIL;
-	}
-	rval = fgets(buffer, 512 , extractinfo);
-	printf("%s",buffer); 
-
-	if (pclose(extractinfo) != 0) {
-		return KW_FAIL;
-	}
-	
-	return KW_SUCCESS;
-}
-
-static int plugin_poppler(const char *filepath) {
-	FILE *pdfinfo = NULL;
-	char buffer[512];
-	char command[20];
-	int i = 0;
-	
-	sprintf(command, "pdfinfo %s", filepath);
-	printf("%s\n", command);
-	
-	pdfinfo = popen(command, "r");
-	
-	if (pdfinfo == NULL){
-		return KW_FAIL;
-	}
-	
-	while (fgets(buffer, 512 , pdfinfo)) {
-		printf("%s",buffer); 
-	}
-	if (i == 0) {
-		printf("file mime is not PDF\n");
-		return KW_FAIL;
-	}
-	
-	if (pclose(pdfinfo) != 0) {
-		fprintf(stdout," Error: Failed to close command stream \n");
-		return KW_FAIL;
-	}
-	
-	return KW_SUCCESS;
-}
+*/
 
 int metadata_extract(const char *file, struct kw_metadata *s)
 {
