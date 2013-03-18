@@ -31,6 +31,7 @@
 
 #include "fusefunc.h"
 #include "dbfuse.h"
+#include "dbapriori.h"
 #include "apriori.h"
 #include "dbinit.h"
 #include "dbbasic.h"
@@ -68,7 +69,7 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	if(strlen(path)>10) {
 		pre = strdup(strrchr(path,'/'));
 		*(pre + 10) = '\0';
-		log_msg("%s",(strcmp(pre,"/SUGGESTED" ) == 0)?"SUGGEST":"NOSUGGEST");
+		log_msg("%s",(strcmp(pre,"/SUGGESTED" ) == 0)?"SUGGESTED":"NOSUGGEST");
 		if(strcmp(pre,"/SUGGESTED" ) == 0) {
 			stbuf->st_mode= S_IFREG | KW_STFIL;
 			return 0;
@@ -108,7 +109,7 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 }
 
 /**
- * @fn static int kwest_readdir(const char *path, void *buf, 
+ * @fn static int kwest_readdir(const char *path, void *buf,
  *            fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
  * @brief list sub-directories and files
  * @param path path file system path
@@ -139,17 +140,17 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	 * check_path_validity(path)
 	 * that recognises a valid kwest path
 	 */
-	 
+
 	/*
 	if(check_path_validity(path) != KW_SUCCESS) {
 		return -ENOENT;
 	}
 	*/
-	
-	/** @note FILLER fuse provides a buffer which is supposed to be 
+
+	/** @note FILLER fuse provides a buffer which is supposed to be
 	 * filled with entries (listings) for the current readdir command
 	 * the function filler is provided by fuse
-	 */ 
+	 */
 	memset(&st, 0, sizeof(st));
 	st.st_mode = S_IFDIR | KW_STDIR;
 
@@ -169,24 +170,45 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			break;
 		}
 	}
-	/** get suggestions under current path */
+
+	/** get File suggestions under current path */
 	suggest = get_file_suggestions(strrchr(path,'/') + 1);
 	if (suggest != NULL) {
-		int i =0;
-		char *entry = NULL;
+		int i = 0;
+		char *entry;
+		entry = (char *)malloc(strlen(suggest) * sizeof(char));
 		do {
-			entry = get_token(suggest,i,',');
-			if (strcmp(entry,"") == 0) {
+			get_token(&entry, suggest, i, ',');
+			if (strcmp(entry, "") == 0) {
 				break;
 			}
-			strcpy(buffer, "SUGGESTED - ");
+			strcpy(buffer, "SUGGESTEDFILE - ");
 			strcat(buffer, entry);
 			filler(buf, buffer, &st, 0);
-			free(entry);
 			i++;
-		} while(entry != NULL);
-	} else {
-		log_msg("SUGGEST NULL");
+		} while(1);
+		free((char *) entry);
+		free((char *) suggest);
+	}
+
+	/** get Tag suggestions under current path */
+	suggest = get_tag_suggestions(strrchr(path,'/') + 1);
+	if (suggest != NULL) {
+		int i = 0;
+		char *entry;
+		entry = (char *)malloc(strlen(suggest) * sizeof(char));
+		do {
+			get_token(&entry, suggest, i, ',');
+			if (strcmp(entry, "") == 0) {
+				break;
+			}
+			strcpy(buffer, "SUGGESTEDTAG - ");
+			strcat(buffer, entry);
+			filler(buf, buffer, &st, 0);
+			i++;
+		} while(1);
+		free((char *) entry);
+		free((char *) suggest);
 	}
 
 	return 0;
@@ -213,7 +235,7 @@ static int kwest_access(const char *path, int mask)
 	/** @todo
 	 * kwest_access: check proper access rights
 	 */
-	 
+
 	/** @warning
 	 * temporary return 0
 	 */
@@ -272,7 +294,7 @@ void kwest_destroy(void *private_data)
 /**
  * @fn int kwest_mkdir(const char *path, mode_t mode)
  * @brief make directory
- * @details this is the normal mkdir system call. calling this is supposed to 
+ * @details this is the normal mkdir system call. calling this is supposed to
  * add a tag by the given name. mkdir is intepreted as make-tag. Since tags
  * are represented as virtual directories, this is used to create them.
  * The contents of directories are displayed using the readdir operation
@@ -282,7 +304,7 @@ void kwest_destroy(void *private_data)
  * @return -errno on error
  * @see kwest_readdir
  * @author Harshvardhan Pandit
- */  
+ */
 int kwest_mkdir(const char *path, mode_t mode)
 {
 	log_msg("mkdir: %s",path);
@@ -298,8 +320,8 @@ int kwest_mkdir(const char *path, mode_t mode)
 /**
  * @fn int kwest_rmdir(const char *path)
  * @brief remove given directory
- * @details this is the normal rmdir system call. calling this is supposed to 
- * remove a tag by the given name. rmdir is intepreted as remove-tag. 
+ * @details this is the normal rmdir system call. calling this is supposed to
+ * remove a tag by the given name. rmdir is intepreted as remove-tag.
  * @param path path of file system
  * @return 0 on SUCCESS
  * @return -errno on error
@@ -308,12 +330,12 @@ int kwest_mkdir(const char *path, mode_t mode)
 int kwest_rmdir(const char *path)
 {
 	log_msg("rmdir: %s",path);
-	
+
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	return remove_directory(path);
 }
 
@@ -321,7 +343,7 @@ int kwest_rmdir(const char *path)
 
 /* FILE FUNCTIONS */
 
- 
+
 /**
  * @fn static int kwest_open(const char *path, struct fuse_file_info *fi)
  * @brief open a file for read/write operations
@@ -341,13 +363,13 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	abspath = get_absolute_path(path); /* get absolute path on disk */
 	if(abspath == NULL) {
 		log_msg("ABSOLUTE PATH ERROR");
 		return -EIO;
 	}
-	
+
 	res = open(abspath, fi->flags); /* open system call */
 	if (res == -1) {
 		log_msg("COULD NOT OPEN FILE");
@@ -366,7 +388,7 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
  * @param fi fuse file handle
  * @return 0 on SUCCESS
  * @return -errno on  error
- * @author Harshvardhan Pandit 
+ * @author Harshvardhan Pandit
  */
 static int kwest_release(const char *path, struct fuse_file_info *fi)
 {
@@ -374,7 +396,7 @@ static int kwest_release(const char *path, struct fuse_file_info *fi)
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
 	log_msg("release: %s",path);
-	
+
 	return 0;
 }
 
@@ -389,7 +411,7 @@ static int kwest_release(const char *path, struct fuse_file_info *fi)
  * @param dev creation mode
  * @return 0 on SUCCESS
  * @return -errno on error
- * @author Harshvardhan Pandit 
+ * @author Harshvardhan Pandit
  */
 static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 {
@@ -397,10 +419,10 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 	 * kwest_mknod: create new file directly into file system?
 	 */
 	/** @todo
-	 * kwest_mknod: what happens when utilities such as the browser want 
+	 * kwest_mknod: what happens when utilities such as the browser want
 	 * to create temporar files to work with cp/mv
 	 */
-	 
+
 	/** @bug
 	 * cp/mv does not work correctly due to improper implementation of
 	 * kwest_mknod. cp/mv will work correctly when it is from kwest
@@ -413,8 +435,8 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
-	}	
-	
+	}
+
 	if(abspath == NULL) {
 		log_msg("ABSOLUTE PATH ERROR");
 		return -EIO;
@@ -450,7 +472,7 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
  * @return 0 on SUCCESS
  * @return -errno on error
  * @author Harshvardhan Pandit
- */ 
+ */
 static int kwest_rename(const char *from, const char *to)
 {
 	log_msg("rename: %s to %s",from,to);
@@ -459,7 +481,7 @@ static int kwest_rename(const char *from, const char *to)
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	return rename_this_file(from, to);
 }
 
@@ -470,24 +492,24 @@ static int kwest_rename(const char *from, const char *to)
  * @param path path of file system
  * @return 0 on SUCCESS
  * @return -errno on error
- * @author Harshvardhan Pandit 
+ * @author Harshvardhan Pandit
  */
 static int kwest_unlink(const char *path)
 {
-	
+
 	log_msg("unlink: %s",path);
 
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	return remove_this_file(path);
 }
 
 
 /**
- * @fn static int kwest_read(const char *path, char *buf, size_t size, 
+ * @fn static int kwest_read(const char *path, char *buf, size_t size,
  *                           off_t offset, struct fuse_file_info *fi)
  * @brief read specified bytes from file
  * @param path path of file system
@@ -497,7 +519,7 @@ static int kwest_unlink(const char *path)
  * @param fi fuse file handle
  * @return 0 on SUCCESS
  * @return -errno on error
- * @author Harshvardhan Pandit 
+ * @author Harshvardhan Pandit
  */
 static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
@@ -506,14 +528,14 @@ static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 	int fd = 0;
 	int res = 0;
 	const char *abspath = NULL;
-	
+
 	log_msg ("read: %s",path);
-	
+
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	abspath = get_absolute_path(path);
 	if(abspath == NULL) {
 		log_msg("ABSOLUTE PATH ERROR");
@@ -548,7 +570,7 @@ static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
  * @param fi fuse file handle
  * @return 0 on SUCCESS
  * @return -errno on error
- * @author Harshvardhan Pandit 
+ * @author Harshvardhan Pandit
  */
 static int kwest_write(const char *path, const char *buf, size_t size,
                        off_t offset, struct fuse_file_info *fi)
@@ -557,14 +579,14 @@ static int kwest_write(const char *path, const char *buf, size_t size,
 	int fd = 0;
 	int res = 0;
 	const char *abspath = NULL;
-	
+
 	log_msg ("write: %s",path);
-	
+
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	abspath = get_absolute_path(path);
 	if(abspath == NULL) {
 		return -EIO;
@@ -574,7 +596,7 @@ static int kwest_write(const char *path, const char *buf, size_t size,
 	if (fd == -1) {
 		return -errno;
 	}
-	
+
 	res = pwrite(fd, buf, size, offset); /* pwrite system call */
 	if (res == -1) {
 		res = -errno;
@@ -592,27 +614,27 @@ static int kwest_write(const char *path, const char *buf, size_t size,
  * @param size truncare length
  * @return 0 on SUCCESS
  * @return -errno on error
- * @author Harshvardhan Pandit 
+ * @author Harshvardhan Pandit
  */
 static int kwest_truncate(const char *path, off_t size)
 {
 	log_msg("truncate: %s", path);
-	
+
 	int res;
 
 	const char *abspath = NULL;
-	
+
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	abspath = get_absolute_path(path);
 	if(abspath == NULL) {
 		log_msg("ABSOLUTE PATH ERROR");
 		return -EIO;
 	}
-	
+
 	res = truncate(abspath, size);
 	if (res == -1) {
 		log_msg("TRUNCATE FILE ERROR");
@@ -630,20 +652,20 @@ static int kwest_truncate(const char *path, off_t size)
  * @param mode mode of file to be set
  * @return 0 on SUCCESS
  * @return -errno on error
- * @author Harshvardhan Pandit 
+ * @author Harshvardhan Pandit
  */
 static int kwest_chmod(const char *path, mode_t mode)
 {
 	int res;
 	const char *abspath = NULL;
-	
+
 	log_msg ("chmod: %s",path);
-	
+
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	abspath = get_absolute_path(path);
 	if(abspath == NULL) {
 		return -EIO;
@@ -653,7 +675,7 @@ static int kwest_chmod(const char *path, mode_t mode)
 	if (res == -1) {
 		return -errno;
 	}
-	
+
 	return 0;
 }
 
@@ -666,20 +688,20 @@ static int kwest_chmod(const char *path, mode_t mode)
  * @param gid group id
  * @return 0 on SUCCESS
  * @return -errno on error
- * @author Harshvardhan Pandit 
+ * @author Harshvardhan Pandit
  */
 static int kwest_chown(const char *path, uid_t uid, gid_t gid)
 {
 	int res;
 	const char *abspath = NULL;
-	
+
 	log_msg ("chown: %s",path);
-	
+
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
-	
+
 	abspath = get_absolute_path(path);
 	if(abspath == NULL) {
 		return -EIO;
@@ -688,7 +710,7 @@ static int kwest_chown(const char *path, uid_t uid, gid_t gid)
 	res = lchown(abspath, uid, gid);
 	if (res == -1)
 		return -errno;
-	
+
 	return 0;
 }
 

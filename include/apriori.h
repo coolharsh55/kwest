@@ -23,11 +23,16 @@
 #ifndef APRIORI_H_INCLUDED
 #define APRIORI_H_INCLUDED
 
+#define FILES 1
+#define TAGS 2
+
 #define MINSUP 0.4
 #define MINCONF 0.5
+#define RULE_LEVEL 0.5
 
-#define MAX_ITEMSET_LENGTH 512
+#define MAX_ITEMSET_LENGTH 1024
 #define MAX_ITEM_LENGTH 5
+#define MIN_ITEM_LENGTH 3
 
 #define CHAR_ITEMSET_SEP '|'
 #define CHAR_ITEM_SEP ','
@@ -37,7 +42,7 @@
 
 typedef struct Candidate{
 	char members[MAX_ITEMSET_LENGTH];
-	int supportcnt[(int)(MAX_ITEMSET_LENGTH / (MAX_ITEM_LENGTH + 1))];
+	int supportcnt[(int)(MAX_ITEMSET_LENGTH / (MIN_ITEM_LENGTH + 1))];
 	struct Candidate *nextc;
 }C;
 
@@ -50,33 +55,14 @@ typedef struct Itemset{
 I *headi;
 
 /*
- * Database Functions
- *
- * generate_candidates :
- ** 	get_user_tagged_files
- * 	string_from_stmt
- *
- * calculate_frequent_itemsets :
- ** 	get_user_tagname
- ** 	get_fid_under_tag
- * 	finalize
- *
- * complete_rule :
- * 	add_rule
- *
- * apriori :
- ** 	count_user_tags
- */
-
-/*
  * Returns new token separated by separator
  */
-char *get_token(char *source_str ,int tokenno, char separator);
+void get_token(char **token, char *source_str ,int tokenno, char separator);
 
 /*
  * Returns individual items from a token
  */
-char *get_item(char *token,int *item_iter);
+void get_item(char **item, char *token,int *item_iter);
 
 /*
  * Total number of items in token

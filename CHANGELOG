@@ -2,7 +2,19 @@
 Fixed Bug : Removing metadata tags when file removed from kwest
 
 **2013 Mar 15**
+Added Apriori Implementation: Show tag suggestions while browsing
 Added module for Database Consistency
+
+**2013 Mar 14**
+refactor(generalize) apriori to allow extendibility in use
+fixed major apriori memory leaks, invalid reads, invalid writes
+optimize apriori for memory allocation/deallocation
+
+**2013 Mar 12**
+Set limit for rules generation in apriori
+Set boundary conditions to check string length in apriori
+Fixed some apriori memory leaks
+refactor apriori code
 
 **2013 Mar 11**
 generalize database structure for plugin architecture

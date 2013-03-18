@@ -37,6 +37,20 @@
 
 
 /**
+ * @brief Get users home directory absolute path
+ * @param homedir
+ * @return void
+ * @author SG
+ */
+void get_homedir(char **homedir)
+{
+	struct passwd *pw;
+
+	pw = getpwuid(getuid());
+	*homedir = pw->pw_dir;
+}
+
+/**
  * @brief Initialize Return sqlite pointer object
  * @param void
  * @return sqlite3 pointer : SUCCESS, NULL : FAIL
@@ -48,14 +62,12 @@ sqlite3 *get_kwdb(void)
 
 	if(db == NULL){
 		int status;
-		struct passwd *pw;
-		const char *homedir;
+		char *homedir;
 		char kwestdir[QUERY_SIZE];
 
 		/* Set path for database file to /home/user/.config */
-		pw = getpwuid(getuid());
-		homedir = pw->pw_dir; /* initial working directory */
-		strcpy(kwestdir,strcat((char *)homedir,CONFIG_LOCATION));
+		get_homedir(&homedir);
+		strcpy(kwestdir,strcat(homedir,CONFIG_LOCATION));
 
 		if(mkdir(kwestdir, KW_STDIR) == -1 && errno != EEXIST) {
 			return NULL;
@@ -83,6 +95,7 @@ int create_db(void)
 {
 	char query[QUERY_SIZE];
 	int status;
+	char *homedir, *username;
 
 	strcpy(query,"create table if not exists FileDetails "
 	"(fno integer primary key,fname text,abspath text);");
@@ -109,7 +122,7 @@ int create_db(void)
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	strcpy(query,"create table if not exists AssociationRules "
-	"(tag1 text,tag2 text);");
+	"(type integer,tag1 text,tag2 text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	/* Possible Tag-Tag Relations */
@@ -122,6 +135,11 @@ int create_db(void)
 	add_tag(TAG_ROOT, SYSTEM_TAG);
 	add_tag(TAG_FILES, SYSTEM_TAG);
 	add_association(TAG_FILES, TAG_ROOT, ASSOC_SUBGROUP);
+
+	get_homedir(&homedir);
+	username = strrchr(homedir, '/') + 1;
+	add_tag(username, SYSTEM_TAG);
+	add_association(username, TAG_ROOT, ASSOC_SUBGROUP);
 
 	return status;
 }

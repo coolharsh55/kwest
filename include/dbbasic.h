@@ -72,9 +72,14 @@ int untag_file(const char *t,const char *f);
 sqlite3_stmt *get_fname_under_tag(const char *t);
 
 /*
- * Return list of files associated to given tag
+ * Return list of file id associated to given tag
  */
 sqlite3_stmt *get_fid_under_tag(const char *t);
+
+/*
+ * Return list of tag id associated to given tag
+ */
+sqlite3_stmt *get_tid_under_tag(const char *t);
 
 /*
  * Return list of tags associated with a given file
@@ -150,36 +155,7 @@ char *get_abspath_by_fname(const char *fname);
  */
 int rename_file(const char *from, const char *to);
 
-/* -------------------- Apriori Functions --------------------- */
-
-/*
- * Count of all user created tags in kwest
- */
-int count_user_tags(void);
-
-/*
- * List all user tags in the system
- */
-sqlite3_stmt *get_user_tagname(void);
-
-/*
- * Get fno of user tagged files
- */
-sqlite3_stmt *get_user_tagged_files(void);
-
-/*
- * Get fno of user tagged files
- */
-int add_rule(char *para1, char *para2);
-
-/*
- * Get file suggestions using apriori association rules
- */
-char *get_file_suggestions(char *tagname);
-
-/*
- * Finalize sqlite statement
- */
-void finalize(sqlite3_stmt * stmt);
+int associate_file_metadata(const char *metatype,const char *tagname,
+                            const char *fname);
 
 #endif
