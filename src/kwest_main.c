@@ -99,7 +99,8 @@ taglib 1.7+
 
 #include "plugins_extraction.h"
 #include "plugin_taglib.h"
-
+#include "plugin_pdfinfo.h"
+#include "plugin_libextractor.h"
 
 
 /**
@@ -113,6 +114,7 @@ int main(int argc, char *argv[])
 {
 	/** get user uid */
 	struct passwd *pw = getpwuid(getuid());
+	int ret;
 	/** get user home directory */
 	const char *homedir = pw->pw_dir;
 	FILE *stderror = NULL;
@@ -148,7 +150,11 @@ int main(int argc, char *argv[])
 	commit_transaction();
 	/** load plugins */
 	begin_transaction();
-	int ret = plugins_add_plugin(load_this_plugin());
+	ret = plugins_add_plugin(load_taglib_plugin());
+	printf("plugin load status = %d\n", ret);
+	ret = plugins_add_plugin(load_pdfinfo_plugin());
+	printf("plugin load status = %d\n", ret);
+	ret = plugins_add_plugin(load_libextractor_plugin());
 	printf("plugin load status = %d\n", ret);
 	commit_transaction();
 
