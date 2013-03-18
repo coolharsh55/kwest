@@ -1,6 +1,6 @@
-SOURCES = fusefunc.c dbfuse.c logging.c dbbasic.c dbinit.c dbkey.c dbconsistency.c metadata_extract.c plugins_extraction.c import.c apriori.c kwest_main.c
+SOURCES = fusefunc.c dbfuse.c logging.c dbbasic.c dbinit.c dbkey.c dbconsistency.c dbplugin.c metadata_extract.c plugins_extraction.c import.c apriori.c kwest_main.c
 
-LIBS = -L$(LIB) -lfuse -lsqlite3 -lkw_taglib -ltag_c -ltag -Wl,-rpath=.
+LIBS = -L$(LIB) -lfuse -lsqlite3 -lkw_taglib -ltag_c -ltag -lm -Wl,-rpath=.
 
 INCLUDE = ../include
 LIB = ../lib
@@ -9,7 +9,7 @@ EXE = kwest
 
 CC = gcc
 
-CCFLAGS = -g -Wall -Wextra -std=gnu99 -pedantic-errors -I$(INCLUDE)
+CCFLAGS = -g3 -Wall -Wextra -std=gnu99 -pedantic-errors -I$(INCLUDE)
 
 OFLAGS = -c
 
@@ -34,13 +34,13 @@ kwest_libs: kw_taglib
 kw_taglib: plugin_taglib
 
 plugin_taglib: plugin_taglib.o kwt_upd_meta.o
-	gcc -g -shared -I$(INCLUDE) -Wl,-soname,libkw_taglib.so -o $(LIB)/libkw_taglib.so -ltag -ltag_c plugin_taglib.o kwt_upd_meta.o
+	gcc -g3 -shared -I$(INCLUDE) -Wl,-soname,libkw_taglib.so -o $(LIB)/libkw_taglib.so -ltag -ltag_c plugin_taglib.o kwt_upd_meta.o
 
 plugin_taglib.o:
-	gcc -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -std=gnu99 -fPIC -ltag_c -c plugin_taglib.c
+	gcc -c -g3 -I$(INCLUDE) -Wall -Wextra -pedantic-errors -std=gnu99 -fPIC -ltag_c -c plugin_taglib.c
 
 kwt_upd_meta.o:
-	g++ -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -fPIC -ltag kwt_upd_meta.cpp
+	g++ -c -g3 -I$(INCLUDE) -Wall -Wextra -pedantic-errors -fPIC -ltag kwt_upd_meta.cpp
 
 c: clean
 
