@@ -155,7 +155,4 @@ char *get_abspath_by_fname(const char *fname);
  */
 int rename_file(const char *from, const char *to);
 
-int associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname);
-
 #endif

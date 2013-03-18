@@ -215,7 +215,12 @@ const char *get_field_name(const char *querystring, int fieldno)
 
 	status = sqlite3_step(stmt);
 	if(status == SQLITE_ROW){ /* return fieldname if exists */
+		if((const char*)sqlite3_column_text(stmt,0)==NULL) {
+			sqlite3_finalize(stmt);
+			return NULL;
+		} else {
 		fieldname = strdup((const char*)sqlite3_column_text(stmt,0));
+		}
 	}
 
 	sqlite3_finalize(stmt);

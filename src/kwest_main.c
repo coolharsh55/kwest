@@ -72,9 +72,9 @@ taglib 1.7+
  * or depending on the path of fusermount
  * $ echo 'exec /bin/fusermount $@' >> fusermount
  * @endcode
- * 
+ *
  * @subsection gdb GDB
- * check stacks and execution control through 
+ * check stacks and execution control through
  * @code
  * $ gdm kwest
  * gdb execution comments
