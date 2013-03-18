@@ -52,7 +52,7 @@ static int add_metadata_file(int fno,const char *abspath,char *fname);
 
 /**
  * @fn int add_tag(const char *tagname,int tagtype)
- * @brief Create a new user tag in kwest 
+ * @brief Create a new user tag in kwest
  * @param tagname name of the tag
  * @param tagtype systemtag / usertag
  * @return KW_SUCCESS on SUCCESS
@@ -211,9 +211,9 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	 * }
 	 */
 	/*meta = extract_metadata_file(abspath, &M);
-	
-	
-	
+
+
+
 	if(meta == NULL) {
 		extract_clear_strings(meta);
 		return KW_ERROR;
@@ -235,7 +235,7 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 	}
 	strcat(q2,");");
 	/*sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0); */
-	sqlite3_prepare_v2(get_kwdb(),q2,-1,&stmt,0); 
+	sqlite3_prepare_v2(get_kwdb(),q2,-1,&stmt,0);
 
 	/*! int i = 1;
 	 * for(; i<=M.argc ; i++) {
@@ -254,7 +254,7 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 		associate_file_metadata(TAG_ARTIST,kw_M.tagv[1],fname);
 		associate_file_metadata(TAG_ALBUM,kw_M.tagv[2],fname);
 		associate_file_metadata(TAG_GENRE,kw_M.tagv[3],fname);*/
-		kw_M.obj = (void *)fname;		
+		kw_M.obj = (void *)fname;
 	} else { /* Handle if Error while Adding Metadata */
 		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,fname);
 		/*extract_clear_strings(meta);*/
@@ -313,20 +313,20 @@ int associate_file_metadata(const char *metatype,const char *tagname,
 
 /**
  * @brief Remove file form kwest
- * @param fname - File name
+ * @param abspath Absolute path of file
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG
  */
-int remove_file(const char *fname)
+int remove_file(const char *abspath)
 {
 	char query[QUERY_SIZE];
 	int status;
 	int fno;
 
-	fno = get_file_id(fname); /* Get File ID */
+	fno = get_file_id(strrchr(abspath,'/') + 1); /* Get File ID */
 
 	if(fno == KW_FAIL){ /* Return if File does not Exists */
-		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,fname);
+		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,abspath);
 		return KW_ERROR;
 	}
 

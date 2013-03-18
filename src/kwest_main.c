@@ -4,23 +4,23 @@
  * @author Harshvardhan Pandit
  * @date March 2013
  */
- 
- /** @mainpage 
+
+ /** @mainpage
  * @tableofcontents
  * @section license LICENSE
  * Copyright 2013 Harshvardhan Pandit
  * Licensed under the Apache License, Version 2.0 (the "License");
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * 	http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, 
+ *
+ * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  * @section running RUNNING
  * all the files are currently in "src" with the makefile
 makefile commands are:
@@ -82,6 +82,7 @@ taglib 1.7+
 #include "fusefunc.h"
 #include "dbinit.h"
 #include "apriori.h"
+#include "dbconsistency.h"
 #include "import.h"
 #include "logging.h"
 #include "flags.h"
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
 	printf("Initiating logging file(s).........\n");
 	/** initialize logging mechanism */
 	if(log_init() == KW_SUCCESS) {
-		stderror = freopen(logdir, "w", stderr); 
+		stderror = freopen(logdir, "w", stderr);
 		if(stderror == NULL) { /* redirect stderr to logfile */
 			printf("could not redirect stderror\n");
 		}
@@ -139,8 +140,11 @@ int main(int argc, char *argv[])
 	int ret = plugins_add_plugin(load_this_plugin());
 	printf("plugin load status = %d\n", ret);
 	commit_transaction();
-	/** import files into kwest */
+
 	begin_transaction();
+	/** Validate Database entries */
+	check_db_consistency();
+	/** import files into kwest */
 	printf("Importing file from %s\n",musicdir);
 	if(import(musicdir) == KW_SUCCESS) {
 		log_msg("Importing files = SUCCESS");
@@ -150,7 +154,7 @@ int main(int argc, char *argv[])
 		printf("FAILED");
 		printf("Exiting program...\n");
 		return -1;
-	}	
+	}
 	apriori();
 	commit_transaction();
 	/** restore stderr to default */

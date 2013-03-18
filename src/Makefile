@@ -1,4 +1,4 @@
-SOURCES = fusefunc.c dbfuse.c logging.c dbbasic.c dbinit.c dbkey.c metadata_extract.c plugins_extraction.c import.c apriori.c kwest_main.c
+SOURCES = fusefunc.c dbfuse.c logging.c dbbasic.c dbinit.c dbkey.c dbconsistency.c metadata_extract.c plugins_extraction.c import.c apriori.c kwest_main.c
 
 LIBS = -L$(LIB) -lfuse -lsqlite3 -lkw_taglib -ltag_c -ltag -Wl,-rpath=.
 
@@ -23,8 +23,8 @@ $(EXE) : $(OBJECTS)
 	$(CC) -o $(EXE) $(OBJECTS) $(LIBS)
 
 %.o: %.c
-	$(CC) $(OFLAGS) $(CCFLAGS) $< 
- 
+	$(CC) $(OFLAGS) $(CCFLAGS) $<
+
 fusefunc.o: fusefunc.c
 	$(CC) $(OFLAGS) $(CCFLAGS) $< $X
 
@@ -49,7 +49,7 @@ clean:
 	rm -rf *.db
 
 ca: cleanall
-	
+
 cleanall: clean
 	rm -rf $(EXE)
 
