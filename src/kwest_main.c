@@ -58,6 +58,7 @@ taglib 1.7+
 
 
  * @section DEBUGGING
+ * @subsection valgrind Valgrind
  * memory check kwest through:
  * @code
  * valgrind --tool=memcheck --trace-children=no --leak-check=full --track-origins=yes -v ./kwest mnt -d -f -s
@@ -70,6 +71,14 @@ taglib 1.7+
  * $ echo 'exec /usr/bin/fusermount.real $@' >> fusermount
  * or depending on the path of fusermount
  * $ echo 'exec /bin/fusermount $@' >> fusermount
+ * @endcode
+ * 
+ * @subsection gdb GDB
+ * check stacks and execution control through 
+ * @code
+ * $ gdm kwest
+ * gdb execution comments
+ * _ run -d -s mnt
  * @endcode
  */
 
@@ -136,7 +145,9 @@ int main(int argc, char *argv[])
 	/** initialize database */
 	begin_transaction();
 	create_db();
+	commit_transaction();
 	/** load plugins */
+	begin_transaction();
 	int ret = plugins_add_plugin(load_this_plugin());
 	printf("plugin load status = %d\n", ret);
 	commit_transaction();

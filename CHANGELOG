@@ -4,6 +4,9 @@ Fixed Bug : Removing metadata tags when file removed from kwest
 **2013 Mar 15**
 Added module for Database Consistency
 
+**2013 Mar 11**
+generalize database structure for plugin architecture
+
 **2013 Mar 06**
 merged branch copy/mpove
 updated branch to current functions
