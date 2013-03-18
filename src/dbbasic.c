@@ -258,20 +258,20 @@ static int add_metadata_file(int fno,const char *abspath,char *fname)
 
 /**
  * @brief Remove file form kwest
- * @param fname - File name
+ * @param abspath Absolute path of file
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG
  */
-int remove_file(const char *fname)
+int remove_file(const char *abspath)
 {
 	char query[QUERY_SIZE];
 	int status;
 	int fno;
 
-	fno = get_file_id(fname); /* Get File ID */
+	fno = get_file_id(strrchr(abspath,'/') + 1); /* Get File ID */
 
 	if(fno == KW_FAIL){ /* Return if File does not Exists */
-		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,fname);
+		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,abspath);
 		return KW_ERROR;
 	}
 
@@ -279,9 +279,10 @@ int remove_file(const char *fname)
 	sprintf(query,"delete from FileAssociation where fno = %d;",fno);
 	sqlite3_exec(get_kwdb(),query,0,0,0);
 
+	/** @todo Generalize structure to remove file medatata */
 	/* Remove File-metadata from Database */
-	sprintf(query,"delete from Audio where fno = %d;",fno);
-	sqlite3_exec(get_kwdb(),query,0,0,0);
+	/* sprintf(query,"delete from Audio where fno = %d;",fno);
+	sqlite3_exec(get_kwdb(),query,0,0,0); */
 
 	/* Remove File from Database */
 	sprintf(query,"delete from FileDetails where fno = %d;",fno);

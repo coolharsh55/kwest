@@ -40,7 +40,6 @@ static int do_on_init(void *obj)
 static int initializations(void)
 {
 	add_mime_type(TAG_AUDIO);
-	add_metadata_type(TAG_AUDIO, TAG_TITLE);
 	add_metadata_type(TAG_AUDIO, TAG_ARTIST);
 	add_metadata_type(TAG_AUDIO, TAG_ALBUM);
 	add_metadata_type(TAG_AUDIO, TAG_GENRE);

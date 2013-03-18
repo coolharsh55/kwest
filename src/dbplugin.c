@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "dbplugin.h"
 #include "dbinit.h"
 #include "dbbasic.h"
 #include "flags.h"

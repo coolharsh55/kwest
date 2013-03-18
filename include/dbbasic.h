@@ -47,7 +47,7 @@ int add_file(const char *abspath);
 /*
  * Remove file form kwest
  */
-int remove_file(const char *path);
+int remove_file(const char *abspath);
 
 /*
  * Add new category to identify metadata

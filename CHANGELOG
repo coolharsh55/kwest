@@ -1,3 +1,9 @@
+**2013 Mar 18**
+Fixed Bug : Removing metadata tags when file removed from kwest
+
+**2013 Mar 15**
+Added module for Database Consistency
+
 **2013 Mar 11**
 generalize database structure for plugin architecture
 
@@ -62,7 +68,7 @@ calls database close, logfile close on fs unmount
 Used stdbool.h as per c99 standard to define the boolean type
 
 **2013 Jan 25**
-Implemented function to Check Path Validity 
+Implemented function to Check Path Validity
 Refactor dbkey, extract_audio_taglib files
 Convert extracted tags to title case
 
