@@ -1,6 +1,6 @@
 SOURCES = fusefunc.c dbfuse.c logging.c dbbasic.c dbinit.c dbkey.c dbplugin.c metadata_extract.c plugins_extraction.c import.c apriori.c kwest_main.c test_pdfinfo.c
 
-LIBS = -L$(LIB) -lfuse -lsqlite3 -lkw_taglib -lkw_pdfinfo -ltag_c -ltag -lm -Wl,-rpath=.
+LIBS = -L$(LIB) -lfuse -lsqlite3 -lkw_taglib -lkw_pdfinfo -lkw_extractor -ltag_c -ltag -lm -Wl,-rpath=.
 
 INCLUDE = ../include
 LIB = ../lib
@@ -28,7 +28,7 @@ $(EXE) : $(OBJECTS)
 fusefunc.o: fusefunc.c
 	$(CC) $(OFLAGS) $(CCFLAGS) $< $X
 
-kwest_libs: kw_taglib kw_pdfinfo
+kwest_libs: kw_taglib kw_pdfinfo kw_extractor
 	export LD_LIBRARY_PATH=$(LIB):$LD_LIBRARY_PATH
 
 kw_taglib: plugin_taglib
@@ -49,6 +49,14 @@ plugin_pdfinfo: plugin_pdfinfo.o
         
 plugin_pdfinfo.o: plugin_pdfinfo.c
 	gcc -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -std=gnu99 -fPIC -ltag_c -c plugin_pdfinfo.c
+
+kw_extractor: plugin_extractor
+
+plugin_extractor: plugin_libextractor.o
+	gcc -g -shared -I$(INCLUDE) -Wl,-soname,libkw_extractor.so -o $(LIB)/libkw_extractor.so -ltag -ltag_c plugin_libextractor.o
+        
+plugin_libextractor.o: plugin_libextractor.c
+	gcc -c -g -I$(INCLUDE) -Wall -Wextra -pedantic-errors -std=gnu99 -fPIC -ltag_c -c plugin_libextractor.c
 
 c: clean
 

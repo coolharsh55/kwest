@@ -99,7 +99,7 @@ taglib 1.7+
 #include "plugins_extraction.h"
 #include "plugin_taglib.h"
 #include "plugin_pdfinfo.h"
-
+#include "plugin_libextractor.h"
 
 
 /**
@@ -152,6 +152,8 @@ int main(int argc, char *argv[])
 	ret = plugins_add_plugin(load_taglib_plugin());
 	printf("plugin load status = %d\n", ret);
 	ret = plugins_add_plugin(load_pdfinfo_plugin());
+	printf("plugin load status = %d\n", ret);
+	ret = plugins_add_plugin(load_libextractor_plugin());
 	printf("plugin load status = %d\n", ret);
 	commit_transaction();
 	/** import files into kwest */

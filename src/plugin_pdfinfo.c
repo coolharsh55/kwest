@@ -26,18 +26,17 @@
 static int do_on_init(void *obj)
 {
 	(void)obj;
-	printf("do_on_init\n");
 	return KW_SUCCESS;
 }
 
 static int initializations(void)
 {
-	log_msg("plugin extractor has added database entries\n"); */
 	add_mime_type(TAG_PDF);
 	add_metadata_type(TAG_PDF, TAG_PDF_TITLE);
 	add_metadata_type(TAG_PDF, TAG_PDF_SUBJECT);
 	add_metadata_type(TAG_PDF, TAG_PDF_AUTHOR);
 	add_metadata_type(TAG_PDF, TAG_PDF_PUBLISHER);
+	log_msg("plugin pdfinfo has added database entries\n");
 	return KW_SUCCESS;
 }
 
@@ -169,8 +168,7 @@ static bool is_of_type(const char *filepath)
 static int metadata_extract(const char *filename, struct kw_metadata *s)
 {
 	char *memchar = NULL;
-	int ret = KW_ERROR;
-	
+
 	s->obj = NULL;
 	s->do_cleanup = &do_on_cleanup;
 	
@@ -192,13 +190,13 @@ static int metadata_extract(const char *filename, struct kw_metadata *s)
 	s->tagtype[3] = memchar;
 	s->tagv[3] = NULL;
 	
-	ret = pipepdfinfo(filename, s);
+	pipepdfinfo(filename, s);
 
 	s->obj = NULL;
 	s->do_init = &do_on_init;
 	s->do_cleanup = &do_on_cleanup;
 	
-	return ret;
+	return KW_SUCCESS;
 }
 
 static int metadata_update(const char *filename, struct kw_metadata *s)
