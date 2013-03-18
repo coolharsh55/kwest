@@ -785,7 +785,8 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
 		}
 		rule[strlen(rule) - 1] = '\0';
 		add_rule(type, token, (strrchr(rule, '>') + 1));
-		rule[strlen(rule) - 1] = CHAR_ITEMSET_SEP;
+		/* rule[strlen(rule) - 1] = CHAR_ITEMSET_SEP; */
+		strcat(rule,STR_ITEMSET_SEP);
 
 	}
 
