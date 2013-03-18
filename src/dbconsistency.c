@@ -43,51 +43,44 @@
  */
 static void check_tag_if_empty(const char *abspath)
 {
-	DIR *directory;
-
-	/* Extract tagname from absolute path of file */
-	char *tagpath = strdup(abspath);
-	char *tagname = strrchr(tagpath,'/');
-	*tagname = '\0';
-	tagname = strrchr(tagpath,'/') + 1;
-
-	/* Remove Tag if Directory deleted from File System */
-	if((directory = opendir(tagpath)) == NULL) {
-		if(remove_tag(tagname) == KW_SUCCESS) {
-			log_msg("Removing tag : %s",tagname);
-			printf("Removing tag : %s\n",tagname);
-		}
-		free(tagpath);
-		return;
-	} else {
-		closedir(directory);
-	}
-
-	/* Remove tag if no files in tag */
-	/*
-	sqlite3_stmt* stmt;
+	sqlite3_stmt *stmt_tno,*stmt_fcnt;
 	char query[QUERY_SIZE];
-	int status;
+	int status_fcnt;
+	const char *tagname;
 	int tno;
+	int fno;
 
-	tno = get_tag_id(tagname);
+	fno = get_file_id(strrchr(abspath,'/') + 1);
 
-	sprintf(query,"select count(*) from FileAssociation where tno = %d;",
-		      tno);
-	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+	sprintf(query,"select tno from FileAssociation where fno = %d;",fno);
+	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt_tno,0);
 
-	status = sqlite3_step(stmt);
-	if(status == SQLITE_ROW) {
-		if(atoi((const char*)sqlite3_column_text(stmt,0)) == 0) {
-			log_msg("Removing tag : %s",tagname);
-			printf("Removing tag : %s\n",tagname);
-			remove_tag(tagname);
+	do {
+		/* Get individual rows */
+		if(SQLITE_ROW != sqlite3_step(stmt_tno)) {
+			break;
 		}
-	}
-	sqlite3_finalize(stmt);
-	*/
 
-	free(tagpath);
+		tno = atoi((char*)sqlite3_column_text(stmt_tno,0));
+		sprintf(query,"select count(*) from FileAssociation where tno"
+		              " = %d;", tno);
+		sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt_fcnt,0);
+
+		status_fcnt = sqlite3_step(stmt_fcnt);
+		if(status_fcnt == SQLITE_ROW) {
+			if(atoi((const char*)sqlite3_column_text(stmt_fcnt,0))
+			   == 1) {
+				tagname = get_tag_name(tno);
+				log_msg("Removing tag : %s",tagname);
+				printf("Removing tag : %s\n",tagname);
+				remove_tag((char *)tagname);
+				free((char *)tagname);
+			}
+		}
+		sqlite3_finalize(stmt_fcnt);
+
+	}while(1);
+	sqlite3_finalize(stmt_tno);
 }
 
 /**

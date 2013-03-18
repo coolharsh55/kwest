@@ -1,3 +1,6 @@
+**2013 Mar 18**
+Fixed Bug : Removing metadata tags when file removed from kwest
+
 **2013 Mar 15**
 Added module for Database Consistency
 

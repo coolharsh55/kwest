@@ -335,8 +335,8 @@ int remove_file(const char *abspath)
 	sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	/* Remove File-metadata from Database */
-	/* sprintf(query,"delete from Audio where fno = %d;",fno);
-	sqlite3_exec(get_kwdb(),query,0,0,0); */
+	sprintf(query,"delete from Audio where fno = %d;",fno);
+	sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	/* Remove File from Database */
 	sprintf(query,"delete from FileDetails where fno = %d;",fno);
