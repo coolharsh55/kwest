@@ -46,8 +46,8 @@ Thumbs.db
 
 # Doxygen Documentation #
 #########################
-/doc/
-/doc2/
+doc/
+doc2/
 
 # Build Tools #
 ###############
