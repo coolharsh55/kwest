@@ -4,7 +4,7 @@
  * @author Harshvardhan Pandit
  * @date March 2013
  */
- 
+
 #include "plugins_extraction.h"
 #include "plugin_libextractor.h"
 #include "flags.h"
@@ -46,8 +46,9 @@ static int initializations(void)
 }
 
 static int associate_image_metadata(struct kw_metadata *s) {
-	associate_file_metadata(TAG_IMAGE_CREATOR, s->tagv[0], s->obj);
 	associate_file_metadata(TAG_IMAGE_DATE, s->tagv[1], s->obj);
+	associate_tag_metadata(TAG_IMAGE_CREATOR, s->tagv[0],
+		               TAG_IMAGE_DATE, s->tagv[1]);
 	return KW_SUCCESS;
 }
 
@@ -81,7 +82,7 @@ static int do_on_cleanup(struct kw_metadata *s)
 				free(memchar);
 			}
 		}
-		
+
 		free(s->tagtype);
 		free(s->tagv);
 	}
@@ -100,16 +101,16 @@ static char *format_string(char *string)
 	if (string == NULL || string[0] == '\0') {
 		return string;
 	}
-	
+
 	while (*strptr != '-') {
-		strptr++; 
+		strptr++;
 	} strptr++;
 	while (*strptr == ' ' || *strptr == '\t') {
 		strptr++;
 	}
 	cleanend = strptr;
 	while (*cleanend != '\0') {
-		cleanend++; 
+		cleanend++;
 	} cleanend--;
 	while (*cleanend == ' ' || *cleanend == '\t' || *cleanend == '\n')  {
 		cleanend--;
@@ -118,7 +119,7 @@ static char *format_string(char *string)
 	*cleanend = '\0';
 
 	strptr[0] = (char)toupper((int)strptr[0]);
-	
+
 	for (i = 1; strptr[i] != '\0'; i++) {
 		if (!isalpha(strptr[i-1])) {
 			strptr[i] = (char)toupper((int)strptr[i]);
@@ -142,7 +143,7 @@ static char *format_date(char *string) {
 	char *endptr;
 	char *newDate = (char *)malloc(8 * sizeof(char));
 	int val = 0;
-	
+
 	while (*string != '-') { string++; } string++; string++;
 	val = (int)strtol(string, &endptr, 10);
 	sprintf(newDate, "%d", val);
@@ -157,7 +158,7 @@ static int pipe_extract_image(const char *filename, struct kw_metadata *s) {
 	char buffer[BUFFER_LENGTH];
 	char command[BUFFER_LENGTH];
 	FILE *pipe_extract = NULL;
-	
+
 	s->type = strdup(TAG_IMAGE);
 	s->tagc = 2;
 	s->tagtype = (char **)malloc(2 * sizeof(char *));
@@ -166,7 +167,7 @@ static int pipe_extract_image(const char *filename, struct kw_metadata *s) {
 	s->tagv[0] = NULL;
 	s->tagv[1] = NULL;
 	s->tagtype[1] = strdup(TAG_IMAGE_DATE);
-	
+
 	sprintf(command, "extract %s", filename);
 	pipe_extract = popen(command, "r");
 	if(pipe_extract == NULL){
@@ -174,7 +175,7 @@ static int pipe_extract_image(const char *filename, struct kw_metadata *s) {
 		return KW_ERROR;
 	}
 	while (fgets(buffer, BUFFER_LENGTH , pipe_extract) != NULL) {
-		if (strstr(buffer, "camera model - ") != NULL || 
+		if (strstr(buffer, "camera model - ") != NULL ||
 		    strstr(buffer, "created by software - ")) {
 			s->tagv[0] = strdup(format_string(buffer));
 		}
@@ -192,14 +193,14 @@ static int pipe_extract_video(const char *filename, struct kw_metadata *s) {
 	char *endptr;
 	long duration = 0;
 	FILE *pipe_extract = NULL;
-	
+
 	s->type = strdup(TAG_VIDEO);
 	s->tagc = 1;
 	s->tagtype = (char **)malloc(2 * sizeof(char *));
 	s->tagv = (char **)malloc(2 * sizeof(char *));
 	s->tagtype[0] = strdup(TAG_VIDEO_LENGTH);
 	s->tagv[0] = NULL;
-	
+
 	sprintf(command, "extract -p duration %s", filename);
 	pipe_extract = popen(command, "r");
 	if(pipe_extract == NULL){
@@ -244,7 +245,7 @@ static int pipeextract(const char *filename, struct kw_metadata *s)
 	if (fgets(buffer, BUFFER_LENGTH , pipe_extract) == NULL) {
 		log_msg("extract tool runtime error\n");
 		return KW_ERROR;
-	} 
+	}
 	if (strstr(buffer,"mimetype - image/") != NULL) {
 		if (s == NULL) {
 			return KW_SUCCESS;
@@ -259,7 +260,7 @@ static int pipeextract(const char *filename, struct kw_metadata *s)
 		log_msg("Unhandled %s\n",buffer);
 		return KW_ERROR;
 	}
-	
+
 	if (pclose(pipe_extract) != 0) {
 		log_msg(" Error: Failed to close command stream");
 	}
@@ -300,7 +301,7 @@ static int on_load(struct plugin_extraction_entry *plugin)
 	initializations();
 	return KW_SUCCESS;
 }
-	
+
 static int on_unload(struct plugin_extraction_entry *plugin)
 {
 	log_msg("plugin on unload\n");
@@ -318,7 +319,7 @@ struct plugin_extraction_entry *load_libextractor_plugin()
 {
 	static struct plugin_extraction_entry *plugin = NULL;
 	if (plugin == NULL) {
-		plugin = (struct plugin_extraction_entry *) 
+		plugin = (struct plugin_extraction_entry *)
 		         malloc(sizeof(struct plugin_extraction_entry));
 		plugin->name = strdup("extractor");
 		plugin->type = strdup("Multiple");
@@ -329,8 +330,8 @@ struct plugin_extraction_entry *load_libextractor_plugin()
 		plugin->on_load            = &on_load;
 		plugin->on_unload          = &on_unload;
 	} else {
-		
+
 	}
-	
+
 	return plugin;
 }
