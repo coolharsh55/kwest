@@ -9,6 +9,7 @@
 *.out
 *.lib
 *.SO
+*.So
 *.so.*
 *.SO.*
 *.app
@@ -46,6 +47,7 @@ Thumbs.db
 # Doxygen Documentation #
 #########################
 /doc/
+/doc2/
 
 # Build Tools #
 ###############
