@@ -70,6 +70,7 @@ static void check_tag_if_empty(const char *abspath)
 		if(status_fcnt == SQLITE_ROW) {
 			if(atoi((const char*)sqlite3_column_text(stmt_fcnt,0))
 			   == 1) {
+				/**@todo Check & Remove associations if empty*/
 				tagname = get_tag_name(tno);
 				log_msg("Removing tag : %s",tagname);
 				printf("Removing tag : %s\n",tagname);
