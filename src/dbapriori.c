@@ -110,6 +110,9 @@ static void correct_items(char ***itemset, int *cnt, char *reference, int refcnt
 		get_token(&token, **itemset, i, CHAR_ITEM_SEP);
 		if(check_item(reference, token, refcnt, CHAR_ITEM_SEP) == 0) {
 			tmpname = (*get_name)(atoi(token));
+			if(tmpname == NULL) {
+				continue;
+			}
 			if(strlen(tmpset) < (MAX_ITEMSET_LENGTH -
 			                     strlen(tmpname) - 1)) {
 				strcat(tmpset, tmpname);

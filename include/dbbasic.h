@@ -47,7 +47,7 @@ int add_file(const char *abspath);
 /*
  * Remove file form kwest
  */
-int remove_file(const char *path);
+int remove_file(const char *abspath);
 
 /*
  * Add new category to identify metadata
@@ -154,8 +154,5 @@ char *get_abspath_by_fname(const char *fname);
  * Rename file existing in kwest
  */
 int rename_file(const char *from, const char *to);
-
-int associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname);
 
 #endif

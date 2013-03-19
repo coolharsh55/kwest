@@ -117,10 +117,6 @@ int create_db(void)
 	"(filetype text,tag text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
-	strcpy(query,"create table if not exists Audio "
-	"(fno integer,title text,artist text,album text,genre text);");
-	status = sqlite3_exec(get_kwdb(),query,0,0,0);
-
 	strcpy(query,"create table if not exists Associations "
 	"(associationid integer primary key,associationtype text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);

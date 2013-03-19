@@ -31,26 +31,33 @@
 
 
 /**
- * @brief Return count of entries in database
+ * @brief Return id of last entry in database
  * @param querystring
  * @return count
  * @author SG
  */
-static int get_field_count(const char *querystring)
+static int get_field_lastid(const char *querystring)
 {
 	sqlite3_stmt *stmt = NULL;
 	char query[QUERY_SIZE];
 	int status;
+	const char *id;
 
-	/* Query to get field count */
+	/* Query to get field id */
 	strcpy(query, querystring);
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 
 	status = sqlite3_step(stmt);
-	if(status == SQLITE_ROW) { /* Return field count */
-		status = atoi((const char*)sqlite3_column_text(stmt,0));
-		sqlite3_finalize(stmt);
-		return status;
+	if(status == SQLITE_ROW) {
+		id = (const char *)sqlite3_column_text(stmt,0);
+		if(id == NULL) {
+			sqlite3_finalize(stmt);
+			return NO_DB_ENTRY;
+		} else {
+			status = atoi(id);
+			sqlite3_finalize(stmt);
+			return status;
+		}
 	}
 
 	sqlite3_finalize(stmt);
@@ -74,14 +81,14 @@ int set_file_id(const char *abspath)
 	}
 
 	/* Query to get maximum no of files existing in database */
-	tmp = get_field_count("select count(fno) from FileDetails;");
+	tmp = get_field_lastid("select max(fno) from FileDetails;");
 
 	if(tmp == KW_FAIL) {
 		return KW_FAIL;
 	} else if(tmp == NO_DB_ENTRY) { /* No Entry */
 		return FILE_START;
-	} else { /* Incremented File ID */
-		return tmp;
+	} else { /* Increment File ID */
+		return (tmp + 1);
 	}
 }
 
@@ -106,22 +113,22 @@ int set_tag_id(const char *tagname,int tagtype)
 	/* Check type of tag : USER / SYSTEM */
 	if(tagtype == USER_TAG){
 		/* Get count of existing User Tags */
-		sprintf(query,"select count(tno) from TagDetails where tno>=%d;"
-		             ,USER_TAG_START);
-		tmp = get_field_count(query);
+		sprintf(query,"select max(tno) from TagDetails where tno>=%d "
+		              "and tno < %d;" ,USER_TAG_START, USER_MADE_TAG);
+		tmp = get_field_lastid(query);
 
 		if(tmp == KW_FAIL) {
 			return KW_FAIL;
 		} else if (tmp == NO_DB_ENTRY) { /* No Entry */
 			return USER_TAG_START;
 		} else { /* Increment Tag ID */
-			return (tmp + USER_TAG_START);
+			return (tmp + 1);
 		}
 	} else { /* tagtype == SYSTEM_TAG */
 		/* Get count of existing System Tags */
-		sprintf(query,"select count(tno) from TagDetails where tno<%d;"
+		sprintf(query,"select max(tno) from TagDetails where tno<%d;"
 		             ,USER_TAG_START);
-		tmp = get_field_count(query);
+		tmp = get_field_lastid(query);
 
 		if(tmp == KW_FAIL) {
 			return KW_FAIL;
@@ -208,7 +215,12 @@ const char *get_field_name(const char *querystring, int fieldno)
 
 	status = sqlite3_step(stmt);
 	if(status == SQLITE_ROW){ /* return fieldname if exists */
+		if((const char*)sqlite3_column_text(stmt,0)==NULL) {
+			sqlite3_finalize(stmt);
+			return NULL;
+		} else {
 		fieldname = strdup((const char*)sqlite3_column_text(stmt,0));
+		}
 	}
 
 	sqlite3_finalize(stmt);

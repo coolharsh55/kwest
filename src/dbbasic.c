@@ -43,11 +43,6 @@
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname);
 
-/*
- * Form association for metadata in file
- */
-
-
 /* ---------------- ADD/REMOVE -------------------- */
 
 /**
@@ -185,6 +180,48 @@ int add_file(const char *abspath)
 }
 
 /**
+ * @brief Store metadata for file in database
+ * @param int fno - file id
+ * @param kw_metadata Structure containing metadata
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL
+ * @author SG HP
+ */
+ /* UNUSED
+static int insert_metadata_file(int fno, struct kw_metadata *kw_M)
+{
+	sqlite3_stmt *stmt;
+	char query[QUERY_SIZE];
+	int status;
+	int i;
+
+	strcpy(query, "insert into ");
+	strcat(query, kw_M->type);
+	strcat(query, " values(:fno");
+	for (i = 0 ; i < kw_M->tagc ; i++) {
+		strcat(query, ",:");
+		strcat(query, kw_M->tagtype[i]);
+	}
+	strcat(query, ");");
+	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+
+	sqlite3_bind_int(stmt,1,fno);
+	for(i = 2; i <= (kw_M->tagc + 1) ; i++) {
+		sqlite3_bind_text(stmt, i, kw_M->tagv[i-2], -1, SQLITE_STATIC);
+	}
+
+	status = sqlite3_step(stmt);
+
+	if(status == SQLITE_DONE){
+		sqlite3_finalize(stmt);
+		return KW_SUCCESS;
+	}
+
+	sqlite3_finalize(stmt);
+	return KW_FAIL;
+}
+* */
+
+/**
  * @brief Extract and add metadata for file in kwest
  * @param int fno - file id
  * @param abspath - absolute path
@@ -194,139 +231,47 @@ int add_file(const char *abspath)
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname)
 {
-	sqlite3_stmt *stmt;
-	/*char query[QUERY_SIZE];*/
-	char q2[QUERY_SIZE];
+	(void)fno;
 	int status;
-	int i = 0;
-/*	struct metadata_audio M; */
 	struct kw_metadata kw_M;
-	/*! struct metadata M; */
-	/*void *meta;*/
-
-	/*!
-	 * meta = extract_metadata(abspath, &M);
-	 * if(meta == NULL) {
-		 * return KW_ERROR;
-	 * }
-	 */
-	/*meta = extract_metadata_file(abspath, &M);
-
-
-
-	if(meta == NULL) {
-		extract_clear_strings(meta);
-		return KW_ERROR;
-	}
-	*/
-	/*strcpy(query,"insert into Audio values"
-	             "(:fno,:title,:artist,:album,:genre);");*/
 
 	status = metadata_extract(abspath, &kw_M);
 	if(status == KW_FAIL) {
 		return KW_ERROR;
 	}
-	strcpy(q2, "insert into ");
-	strcat(q2, kw_M.type);
-	strcat(q2, " values(:fno");
-	for (i=0 ; i<kw_M.tagc ; i++) {
-		strcat(q2,",:");
-		strcat(q2,kw_M.tagtype[i]);
-	}
-	strcat(q2,");");
-	/*sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0); */
-	sqlite3_prepare_v2(get_kwdb(),q2,-1,&stmt,0);
 
-	/*! int i = 1;
-	 * for(; i<=M.argc ; i++) {
-		 * sqlite3_bind_text(stmt,i,M.argv[i],-1,SQLITE_STATIC);
-	 * }
-	 */
-	sqlite3_bind_int(stmt,1,fno);
-	sqlite3_bind_text(stmt,2,kw_M.tagv[0],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,3,kw_M.tagv[1],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,4,kw_M.tagv[2],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,5,kw_M.tagv[3],-1,SQLITE_STATIC);
-	status = sqlite3_step(stmt);
+	/*!
+	status = insert_metadata_file(fno, &kw_M);
 
-	if(status == SQLITE_DONE){
-		/*
-		associate_file_metadata(TAG_ARTIST,kw_M.tagv[1],fname);
-		associate_file_metadata(TAG_ALBUM,kw_M.tagv[2],fname);
-		associate_file_metadata(TAG_GENRE,kw_M.tagv[3],fname);*/
-		kw_M.obj = (void *)fname;
-	} else { /* Handle if Error while Adding Metadata */
+	if(status != KW_SUCCESS) {
 		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,fname);
-		/*extract_clear_strings(meta);*/
 		kw_M.do_cleanup(&kw_M);
-		sqlite3_finalize(stmt);
 		return KW_FAIL;
 	}
+	*/
+
+	kw_M.obj = (void *)fname;
 	kw_M.do_cleanup(&kw_M);
-	/*extract_clear_strings(meta);*/
-	sqlite3_finalize(stmt);
 
-	return KW_SUCCESS;
-}
-
-/**
- * @brief Form association for metadata in file
- * @param metatype - metadata category
- * @param tagname - metadata
- * @param fname - file name
- * @return void
- * @author SG
- */
-int associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname)
-{
-	char *newtag=NULL;
-	int taglength = 0;
-
-	if( (strcmp(tagname,"") == 0) || /* No meta information */
-	    (strcmp(metatype,tagname)==0) ||
-	    (strcmp(metatype,TAG_UNKNOWN)==0) ){
-		/*newtag=strdup(TAG_UNKNOWN);*/
-		taglength = strlen(TAG_UNKNOWN) + strlen(metatype) + 2;
-		newtag = (char *)malloc(taglength * sizeof(char));
-		newtag = strcpy(newtag, TAG_UNKNOWN);
-		newtag = strcat(newtag, " ");
-		newtag = strcat(newtag, metatype);
-		/*newtag=strcat(strcat(newtag," "),metatype);*/
-		/* Create Tag Unknown */
-		add_tag(newtag,SYSTEM_TAG);
-		/* Associate Tag Unknown with File Type*/
-		add_association(newtag,metatype,ASSOC_SUBGROUP);
-		/* Tag File to Metadata Tag */
-		tag_file(newtag,fname);
-		free((char *)newtag);
-	} else { /* Metadata Exist */
-		/* Create Tag for Metadata */
-		add_tag(tagname,USER_TAG);
-		/* Associate Metadata tag with File Type */
-		add_association(tagname,metatype,ASSOC_SUBGROUP);
-		/* Tag File to Metadata Tag */
-		tag_file(tagname,fname);
-	}
 	return KW_SUCCESS;
 }
 
 /**
  * @brief Remove file form kwest
- * @param fname - File name
+ * @param abspath Absolute path of file
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG
  */
-int remove_file(const char *fname)
+int remove_file(const char *abspath)
 {
 	char query[QUERY_SIZE];
 	int status;
 	int fno;
 
-	fno = get_file_id(fname); /* Get File ID */
+	fno = get_file_id(strrchr(abspath,'/') + 1); /* Get File ID */
 
 	if(fno == KW_FAIL){ /* Return if File does not Exists */
-		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,fname);
+		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,abspath);
 		return KW_ERROR;
 	}
 
@@ -334,9 +279,10 @@ int remove_file(const char *fname)
 	sprintf(query,"delete from FileAssociation where fno = %d;",fno);
 	sqlite3_exec(get_kwdb(),query,0,0,0);
 
+	/** @todo Generalize structure to remove file medatata */
 	/* Remove File-metadata from Database */
-	sprintf(query,"delete from Audio where fno = %d;",fno);
-	sqlite3_exec(get_kwdb(),query,0,0,0);
+	/* sprintf(query,"delete from Audio where fno = %d;",fno);
+	sqlite3_exec(get_kwdb(),query,0,0,0); */
 
 	/* Remove File from Database */
 	sprintf(query,"delete from FileDetails where fno = %d;",fno);
@@ -561,7 +507,7 @@ sqlite3_stmt *get_fid_under_tag(const char *t)
 	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 
 	if(status != SQLITE_OK){ /* Error Preparing query */
-		log_msg("get_tid_under_tag : %s",ERR_PREP_QUERY);
+		log_msg("get_fid_under_tag : %s",ERR_PREP_QUERY);
 		return NULL;
 	}
 
