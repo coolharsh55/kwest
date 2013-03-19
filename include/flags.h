@@ -48,7 +48,7 @@
 #define SYSTEM_TAG 2 /* Tag created and used by system */
 
 /* Starting id for tags and files */
-#define NO_DB_ENTRY      0
+#define NO_DB_ENTRY      -2
 #define FILE_START       0
 #define SYSTEM_TAG_START 0
 #define USER_TAG_START   100

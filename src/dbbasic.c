@@ -43,16 +43,11 @@
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname);
 
-/*
- * Form association for metadata in file
- */
-
-
 /* ---------------- ADD/REMOVE -------------------- */
 
 /**
  * @fn int add_tag(const char *tagname,int tagtype)
- * @brief Create a new user tag in kwest 
+ * @brief Create a new user tag in kwest
  * @param tagname name of the tag
  * @param tagtype systemtag / usertag
  * @return KW_SUCCESS on SUCCESS
@@ -185,6 +180,48 @@ int add_file(const char *abspath)
 }
 
 /**
+ * @brief Store metadata for file in database
+ * @param int fno - file id
+ * @param kw_metadata Structure containing metadata
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL
+ * @author SG HP
+ */
+ /* UNUSED
+static int insert_metadata_file(int fno, struct kw_metadata *kw_M)
+{
+	sqlite3_stmt *stmt;
+	char query[QUERY_SIZE];
+	int status;
+	int i;
+
+	strcpy(query, "insert into ");
+	strcat(query, kw_M->type);
+	strcat(query, " values(:fno");
+	for (i = 0 ; i < kw_M->tagc ; i++) {
+		strcat(query, ",:");
+		strcat(query, kw_M->tagtype[i]);
+	}
+	strcat(query, ");");
+	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+
+	sqlite3_bind_int(stmt,1,fno);
+	for(i = 2; i <= (kw_M->tagc + 1) ; i++) {
+		sqlite3_bind_text(stmt, i, kw_M->tagv[i-2], -1, SQLITE_STATIC);
+	}
+
+	status = sqlite3_step(stmt);
+
+	if(status == SQLITE_DONE){
+		sqlite3_finalize(stmt);
+		return KW_SUCCESS;
+	}
+
+	sqlite3_finalize(stmt);
+	return KW_FAIL;
+}
+* */
+
+/**
  * @brief Extract and add metadata for file in kwest
  * @param int fno - file id
  * @param abspath - absolute path
@@ -194,139 +231,47 @@ int add_file(const char *abspath)
  */
 static int add_metadata_file(int fno,const char *abspath,char *fname)
 {
-	sqlite3_stmt *stmt;
-	/*char query[QUERY_SIZE];*/
-	char q2[QUERY_SIZE];
+	(void)fno;
 	int status;
-	int i = 0;
-/*	struct metadata_audio M; */
 	struct kw_metadata kw_M;
-	/*! struct metadata M; */
-	/*void *meta;*/
-
-	/*!
-	 * meta = extract_metadata(abspath, &M);
-	 * if(meta == NULL) {
-		 * return KW_ERROR;
-	 * }
-	 */
-	/*meta = extract_metadata_file(abspath, &M);
-	
-	
-	
-	if(meta == NULL) {
-		extract_clear_strings(meta);
-		return KW_ERROR;
-	}
-	*/
-	/*strcpy(query,"insert into Audio values"
-	             "(:fno,:title,:artist,:album,:genre);");*/
 
 	status = metadata_extract(abspath, &kw_M);
 	if(status == KW_FAIL) {
 		return KW_ERROR;
 	}
-	strcpy(q2, "insert into ");
-	strcat(q2, kw_M.type);
-	strcat(q2, " values(:fno");
-	for (i=0 ; i<kw_M.tagc ; i++) {
-		strcat(q2,",:");
-		strcat(q2,kw_M.tagtype[i]);
-	}
-	strcat(q2,");");
-	/*sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0); */
-	sqlite3_prepare_v2(get_kwdb(),q2,-1,&stmt,0); 
 
-	/*! int i = 1;
-	 * for(; i<=M.argc ; i++) {
-		 * sqlite3_bind_text(stmt,i,M.argv[i],-1,SQLITE_STATIC);
-	 * }
-	 */
-	sqlite3_bind_int(stmt,1,fno);
-	sqlite3_bind_text(stmt,2,kw_M.tagv[0],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,3,kw_M.tagv[1],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,4,kw_M.tagv[2],-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,5,kw_M.tagv[3],-1,SQLITE_STATIC);
-	status = sqlite3_step(stmt);
+	/*!
+	status = insert_metadata_file(fno, &kw_M);
 
-	if(status == SQLITE_DONE){
-		/*
-		associate_file_metadata(TAG_ARTIST,kw_M.tagv[1],fname);
-		associate_file_metadata(TAG_ALBUM,kw_M.tagv[2],fname);
-		associate_file_metadata(TAG_GENRE,kw_M.tagv[3],fname);*/
-		kw_M.obj = (void *)fname;		
-	} else { /* Handle if Error while Adding Metadata */
+	if(status != KW_SUCCESS) {
 		log_msg("add_metadata_file : %s%s",ERR_ADDING_META,fname);
-		/*extract_clear_strings(meta);*/
 		kw_M.do_cleanup(&kw_M);
-		sqlite3_finalize(stmt);
 		return KW_FAIL;
 	}
+	*/
+
+	kw_M.obj = (void *)fname;
 	kw_M.do_cleanup(&kw_M);
-	/*extract_clear_strings(meta);*/
-	sqlite3_finalize(stmt);
 
-	return KW_SUCCESS;
-}
-
-/**
- * @brief Form association for metadata in file
- * @param metatype - metadata category
- * @param tagname - metadata
- * @param fname - file name
- * @return void
- * @author SG
- */
-int associate_file_metadata(const char *metatype,const char *tagname,
-                            const char *fname)
-{
-	char *newtag=NULL;
-	int taglength = 0;
-
-	if( (strcmp(tagname,"") == 0) || /* No meta information */
-	    (strcmp(metatype,tagname)==0) ||
-	    (strcmp(metatype,TAG_UNKNOWN)==0) ){
-		/*newtag=strdup(TAG_UNKNOWN);*/
-		taglength = strlen(TAG_UNKNOWN) + strlen(metatype) + 2;
-		newtag = (char *)malloc(taglength * sizeof(char));
-		newtag = strcpy(newtag, TAG_UNKNOWN);
-		newtag = strcat(newtag, " ");
-		newtag = strcat(newtag, metatype);
-		/*newtag=strcat(strcat(newtag," "),metatype);*/
-		/* Create Tag Unknown */
-		add_tag(newtag,SYSTEM_TAG);
-		/* Associate Tag Unknown with File Type*/
-		add_association(newtag,metatype,ASSOC_SUBGROUP);
-		/* Tag File to Metadata Tag */
-		tag_file(newtag,fname);
-		free((char *)newtag);
-	} else { /* Metadata Exist */
-		/* Create Tag for Metadata */
-		add_tag(tagname,USER_TAG);
-		/* Associate Metadata tag with File Type */
-		add_association(tagname,metatype,ASSOC_SUBGROUP);
-		/* Tag File to Metadata Tag */
-		tag_file(tagname,fname);
-	}
 	return KW_SUCCESS;
 }
 
 /**
  * @brief Remove file form kwest
- * @param fname - File name
+ * @param abspath Absolute path of file
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author SG
  */
-int remove_file(const char *fname)
+int remove_file(const char *abspath)
 {
 	char query[QUERY_SIZE];
 	int status;
 	int fno;
 
-	fno = get_file_id(fname); /* Get File ID */
+	fno = get_file_id(strrchr(abspath,'/') + 1); /* Get File ID */
 
 	if(fno == KW_FAIL){ /* Return if File does not Exists */
-		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,fname);
+		log_msg("remove_file : %s%s",ERR_FILE_NOT_FOUND,abspath);
 		return KW_ERROR;
 	}
 
@@ -334,9 +279,10 @@ int remove_file(const char *fname)
 	sprintf(query,"delete from FileAssociation where fno = %d;",fno);
 	sqlite3_exec(get_kwdb(),query,0,0,0);
 
+	/** @todo Generalize structure to remove file medatata */
 	/* Remove File-metadata from Database */
-	sprintf(query,"delete from Audio where fno = %d;",fno);
-	sqlite3_exec(get_kwdb(),query,0,0,0);
+	/* sprintf(query,"delete from Audio where fno = %d;",fno);
+	sqlite3_exec(get_kwdb(),query,0,0,0); */
 
 	/* Remove File from Database */
 	sprintf(query,"delete from FileDetails where fno = %d;",fno);
@@ -561,7 +507,39 @@ sqlite3_stmt *get_fid_under_tag(const char *t)
 	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 
 	if(status != SQLITE_OK){ /* Error Preparing query */
-		log_msg("get_fname_under_tag : %s",ERR_PREP_QUERY);
+		log_msg("get_fid_under_tag : %s",ERR_PREP_QUERY);
+		return NULL;
+	}
+
+	return stmt;
+}
+
+/**
+ * @brief Return list of tag id associated to given tag
+ * @param t - tagname
+ * @return sqlite3_stmt pointer : SUCCESS, NULL : FAIL
+ * @author SG
+ */
+sqlite3_stmt *get_tid_under_tag(const char *t)
+{
+	sqlite3_stmt *stmt;
+	char query[QUERY_SIZE];
+	int status;
+	int tno;
+
+	tno = get_tag_id(t); /* Get Tag ID */
+	if(tno == KW_FAIL){ /* Return if Tag not found */
+		log_msg("get_tid_under_tag : %s%s",ERR_TAG_NOT_FOUND,t);
+		return NULL;
+	}
+
+	/* Query to get all files associated with tag t */
+	sprintf(query,"select distinct t1 from TagAssociation where t2 = %d;",
+	        tno);
+	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+
+	if(status != SQLITE_OK){ /* Error Preparing query */
+		log_msg("get_tid_under_tag : %s",ERR_PREP_QUERY);
 		return NULL;
 	}
 
@@ -1042,303 +1020,4 @@ int rename_file(const char *from, const char *to)
 
 	log_msg("rename_file : %s%s",ERR_RENAMING_FILE,from);
 	return KW_FAIL;
-}
-
-/* -------------------- Apriori Functions --------------------- */
-
-/**
- * @brief Count of all user created tags in kwest
- * @param void
- * @return Count
- * @author SG
- */
-int count_user_tags(void)
-{
-	sqlite3_stmt *stmt;
-	char query[QUERY_SIZE];
-	int status;
-	int tmp; /* To Hold result of Query */
-
-	sprintf(query,"select count(*) from TagDetails where tno>=%d;",
-	             USER_MADE_TAG);
-	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-
-	status = sqlite3_step(stmt);
-	if(status == SQLITE_ROW) {
-		tmp = atoi((const char*)sqlite3_column_text(stmt,0));
-		sqlite3_finalize(stmt);
-		return tmp;
-	}
-
-	sqlite3_finalize(stmt);
-	return KW_FAIL;
-}
-
-/**
- * @brief List all user tags in the system
- * @param void
- * @return sqlite3_stmt pointer: SUCCESS, NULL : FAIL
- * @author SG
- */
-sqlite3_stmt *get_user_tagname(void)
-{
-	sqlite3_stmt * stmt;
-	char query[QUERY_SIZE];
-	int status;
-
-	/* Query to get user tags from Database */
-	sprintf(query,"select tagname from TagDetails where tno>=%d;",
-	              USER_MADE_TAG);
-	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-
-	if(status != SQLITE_OK){ /* Error Preparing query */
-		log_msg("get_all_tags : %s",ERR_PREP_QUERY);
-		return NULL;
-	}
-
-	return stmt;
-}
-
-/**
- * @brief Get fno of user tagged files
- * @param void
- * @return sqlite3 stmt pointer
- * @author SG
- */
-sqlite3_stmt *get_user_tagged_files(void)
-{
-	sqlite3_stmt *stmt;
-	char query[QUERY_SIZE];
-	int status;
-
-	sprintf(query,"select distinct fno from FileAssociation where tno >= %d"
-	             " order by fno;", USER_MADE_TAG);
-	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-
-	if(status != SQLITE_OK) { /* Error Preparing query */
-		log_msg("get_fname_under_tag : %s",ERR_PREP_QUERY);
-		return NULL;
-	}
-
-	return stmt;
-}
-
-/**
- * @brief Get fno of user tagged files
- * @param void
- * @return sqlite3 stmt pointer
- * @author SG
- *
- * @todo Remove unwanted association rules from db after adding new rules
- */
-int add_rule(char *para1, char *para2)
-{
-	sqlite3_stmt *stmt;
-	char query[QUERY_SIZE];
-	int status;
-
-	/* Query : check if entry exists in AssociationRule Table */
-	sprintf(query,"select count(*) from AssociationRules where "
-	              "tag1 = '%s' and tag2 = '%s';",para1,para2);
-	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-
-	status = sqlite3_step(stmt);
-	if(status == SQLITE_ROW) {
-		if(atoi((const char*)sqlite3_column_text(stmt,0))!= 0) {
-			sqlite3_finalize(stmt);
-			return KW_ERROR; /* Rule Exists */
-		}
-	}
-	sqlite3_finalize(stmt);
-	stmt = NULL;
-
-	/* Query : Insert in AssociationRule Table */
-	strcpy(query,"insert into AssociationRules values(:para1,:para2);");
-	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-
-	sqlite3_bind_text(stmt,1,para1,-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,2,para2,-1,SQLITE_STATIC);
-
-	status = sqlite3_step(stmt);
-
-	if(status == SQLITE_DONE){
-		sqlite3_finalize(stmt);
-		return KW_SUCCESS;
-	}
-
-	log_msg("add_rule_error : %s -> %s",para1,para2);
-	sqlite3_finalize(stmt);
-	return KW_FAIL;
-}
-
-static int get_fid_str_under_tag(char *tagname, char **tag_files)
-{
-	sqlite3_stmt *stmt;
-
-	*tag_files = (char *) malloc(1024 * sizeof(char)); /* All Files
-	                                                           under tag */
-	const char *file;
-	int filecnt;
-
-	/* Get all files under the tag tagname */
-	filecnt = 0;
-	strcpy(*tag_files, "");
-	stmt = get_fid_under_tag(tagname);
-	while((file = string_from_stmt(stmt)) != NULL) {
-		if(strlen(*tag_files) < (1024 - MAX_ITEM_LENGTH)) {
-			strcat(*tag_files, file);
-			strcat(*tag_files, ",");
-			filecnt++;
-		} else {
-			/** @TODO : reallocate memory for tag_files */
-		}
-	}
-	*(*tag_files + strlen(*tag_files) - 1) = '\0';
-	return filecnt;
-}
-
-static int check_itemset(char *itemset, char *main_itemset, int maincnt)
-{
-	char *token;
-	int itemsetcnt;
-	int i;
-
-	itemsetcnt = get_no_of_items(itemset);
-
-	for(i = 0; i < itemsetcnt; i++) {
-		token = get_token(itemset, i, CHAR_ITEM_SEP);
-		if(check_item(main_itemset, token, maincnt, CHAR_ITEM_SEP) == 0) {
-			free((char *) token);
-			return 0; /* Itemset not present in mainitemset */
-		}
-		free((char *) token);
-	}
-
-	return 1;
-}
-
-static void correct_items(char **itemset, int *cnt, char *reference, int refcnt)
-{
-	int i;
-	char *tmpset = (char *)malloc(1024 * sizeof(char));
-	int tmpcnt;
-	char *token;
-
-	strcpy(tmpset, "");
-	tmpcnt = 0;
-
-	for(i = 0; i < *cnt; i++) {
-		token = get_token(*itemset, i, CHAR_ITEM_SEP);
-		if(check_item(reference, token, refcnt, CHAR_ITEM_SEP) == 0) {
-			strcat(tmpset, get_file_name(atoi(token)));
-			strcat(tmpset, STR_ITEM_SEP);
-			tmpcnt++;
-		}
-		free((char *) token);
-	}
-	tmpset[strlen(tmpset) - 1] = '\0';
-
-	strcpy(*itemset, tmpset);
-	*cnt = tmpcnt;
-	free((char *)tmpset);
-}
-
-/**
- * @brief Get file suggestions using apriori association rules
- * @param tagname
- * @return File Suggestions String Separated by CHAR_ITEM_SEP
- * @author SG
- */
-char *get_file_suggestions(char *tagname)
-{
-	sqlite3_stmt *stmt;
-	char query[QUERY_SIZE];
-	char *tag_files;
-	int filecnt;
-	char *lhsrule,*rhsrule;
-	char *suggest = (char *) malloc(1024 * sizeof(char));
-	int suggestcnt;
-	char *token;
-	int i;
-
-	strcpy(suggest, "");
-	suggestcnt = 0;
-
-	filecnt = get_fid_str_under_tag(tagname, &tag_files);
-	//log_msg("Tag : %s #%d Files : %s", tagname, filecnt, tag_files);
-
-	/* analyze all association rules */
-	sprintf(query,"select tag1,tag2 from AssociationRules");
-	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-
-	do {
-		/* Get individual rules */
-		if(SQLITE_ROW != sqlite3_step(stmt)) {
-			break;
-		}
-
-		/* Check if items in LHS of rule are present */
-		lhsrule = (char*)sqlite3_column_text(stmt,0);
-		if( check_itemset(lhsrule, tag_files, filecnt) == 0) {
-			continue; /* If not goto next rule */
-		}
-
-		/* Check if items in RHS of rule are present */
-		rhsrule = (char*)sqlite3_column_text(stmt,1);
-		if( check_itemset(rhsrule, tag_files, filecnt) == 1) {
-			continue; /* If yes, suggested files already present */
-		}
-
-		/* Rule Applies, append to suggestions */
-		//log_msg("%s->%s",lhsrule,rhsrule);
-
-		/* Remove Duplication */
-		for(i = 0; i < get_no_of_items(rhsrule); i++) {
-			token = get_token(rhsrule, i, CHAR_ITEM_SEP);
-			if( check_item(suggest, token, suggestcnt, CHAR_ITEM_SEP) == 0) {
-				/* TODO : check buffer overflow */
-				strcat(suggest,token);
-				strcat(suggest,STR_ITEM_SEP);
-				suggestcnt++;
-			}
-			free((char *)token);
-		}
-
-
-	} while(1);
-	sqlite3_finalize(stmt);
-
-	suggest[strlen(suggest) - 1] = '\0';
-	correct_items(&suggest, &suggestcnt, tag_files, filecnt);
-	//log_msg("%s",suggest);
-	if(strcmp(suggest,"") == 0) return NULL;
-	//free((char *) suggest);
-	free((char *) tag_files);
-	return suggest;
-}
-
-/*char *get_suggestions(char *tagname)
-{
-	char *suggest;
-	char *token;
-	suggest = get_file_suggestions(taganame);
-
-	int cnt = get_no_of_items(suggest);
-
-	for(int i=0;i<cnt;i++)
-	{
-
-	}
-
-}
-*/
-/**
- * @brief Finalize sqlite statement
- * @param stmt sqlite3 statement pointer
- * @return void
- * @author SG
- */
-void finalize(sqlite3_stmt * stmt)
-{
-	sqlite3_finalize(stmt);
 }

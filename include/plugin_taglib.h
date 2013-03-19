@@ -2,6 +2,6 @@
 #define PLUGIN_TAGLIB_H
 
 
-struct plugin_extraction_entry *load_this_plugin(void);
+struct plugin_extraction_entry *load_taglib_plugin(void);
 
 #endif
