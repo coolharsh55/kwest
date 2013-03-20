@@ -492,7 +492,7 @@ static int prune_candidates(int itemset_num)
 			}
 
 			if(k == previ->count) { /* Not a frequent element */
-				log_msg("Item pruned : %s", tmp);
+				/* log_msg("Item pruned : %s", tmp); */
 				prune_item(curri, i);
 				i--;
 				curri->count -= 1;
@@ -588,7 +588,7 @@ static int calculate_frequent_itemsets(int itemset_num, int T,
 		/* log_msg("Frequent %d token %s : %d",itemset_num,
 			  token, lasti->candidate->supportcnt[j]); */
 
-		if(((float)lasti->candidate->supportcnt[j] / T) > MINSUP) {
+		if(((float)lasti->candidate->supportcnt[j] / T) >= MINSUP) {
 			if(isfull(frequent, 1)) {
 				/** @todo : traverse link list */
 				log_msg("Insufficient memory to generate "
@@ -675,6 +675,8 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 	lhs_itemset = (char *) malloc(strlen(members) * sizeof(char));
 	token = (char *)malloc(strlen(members) * sizeof(char));
 
+	/* log_msg("get_confident_subset : %s",members); */
+
 	/* Calculate subsets */
 	for(i = (itemset_num - 1) ; i >= 0; i--) {
 		strcpy(lhs_itemset, "");
@@ -697,7 +699,7 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 		confidence = (float) Nsup / Dsup;
 
 		/* Add subset if canfidence is greater then thershold */
-		if(confidence > MINCONF) {
+		if(confidence >= MINCONF) {
 			/* check if itemset already present in rule */
 			if(check_item(*sub, lhs_itemset, *subcnt,
 			               CHAR_ITEMSET_SEP) == 1) {
@@ -714,6 +716,9 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 			strcat(*sub, lhs_itemset);
 			strcat(*sub, STR_ITEMSET_SEP);
 			*subcnt += 1;
+			/*
+			 log_msg("%d item:%s sub:%s",*subcnt,lhs_itemset, *sub);
+			*/
 		}
 	}
 
@@ -746,7 +751,9 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
 	itemtmp = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
 	subtmp = (char *)malloc((MAX_ITEM_LENGTH + 1) * sizeof(char));
 
-	memsize = ((pow(2, itemset_num) * (MAX_ITEM_LENGTH + 4)) + 1);
+	/* Max Possible subsets + max length for 1 subset items + itemset_num(, ->) + '|' + '/0' */
+	memsize = ((pow(2, itemset_num) - 2) * ((MAX_ITEM_LENGTH * itemset_num) + itemset_num + 1)) + 1;
+
 	rule = (char *) malloc(memsize * sizeof(char));
 	strcpy(rule,"");
 
@@ -785,7 +792,6 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
 		}
 		rule[strlen(rule) - 1] = '\0';
 		add_rule(type, token, (strrchr(rule, '>') + 1));
-		/* rule[strlen(rule) - 1] = CHAR_ITEMSET_SEP; */
 		strcat(rule,STR_ITEMSET_SEP);
 
 	}
@@ -819,7 +825,7 @@ static void generate_assoc_rule(int itemset_num, int type)
 	}
 
 	tmpi = get_itemset(itemset_num);
-	memsize = ((pow(2, itemset_num)) * ((MAX_ITEM_LENGTH * itemset_num) + 1));
+	memsize = ((pow(2, itemset_num) - 2) * ((MAX_ITEM_LENGTH * (itemset_num - 1)) + itemset_num - 1)) + 1;
 	subset = (char *) malloc(memsize * sizeof(char));
 	maintoken = (char *)malloc(strlen(tmpi->candidate->members) *
 	                           sizeof(char));
@@ -869,7 +875,7 @@ static void generate_assoc_rule(int itemset_num, int type)
 		rule = complete_rule(maintoken, itemset_num, &subset,
 		                     subset_cnt, type);
 
-		log_msg("Rule for %s : %s", maintoken ,rule);
+		/* log_msg("Rule for %s : %s", maintoken ,rule); */
 		free((char *) rule);
 	}
 
@@ -953,38 +959,38 @@ static void apriori_main(int num_transactions, sqlite3_stmt *(*files)(void),
 
 	do
 	{
-		log_msg("\nCandidate %d-itemsets : ", itemset_num);
+		/* log_msg("\nCandidate %d-itemsets : ", itemset_num); */
 		candidate_cnt = generate_candidates(itemset_num, files);
 		if (candidate_cnt == 0) {
-			log_msg("No candidates generated");
+			/* log_msg("No candidates generated"); */
 			break;
 		}
-		display_candidate(itemset_num, false);
+		/* display_candidate(itemset_num, false); */
 
 		if(itemset_num > 1) {
 			prune_cnt = prune_candidates(itemset_num);
 			if (prune_cnt == 0) {
-				log_msg("All candidates pruned");
+				/* log_msg("All candidates pruned"); */
 				break;
 			}
 			if(candidate_cnt != prune_cnt) {
-				log_msg("%d-itemsets after Pruning : ",
-				         itemset_num);
-				display_candidate(itemset_num, false);
+				/* log_msg("%d-itemsets after Pruning : ",
+				         itemset_num); */
+				/* display_candidate(itemset_num, false); */
 			}
 		}
 
-		log_msg("Frequent %d-itemsets : ", itemset_num);
+		/* log_msg("Frequent %d-itemsets : ", itemset_num); */
 		candidate_cnt = calculate_frequent_itemsets(itemset_num,
 		                 num_transactions, row, col);
 		if (candidate_cnt == 0) {
-			log_msg("No frequent candidate identified");
+			/* log_msg("No frequent candidate identified"); */
 			break;
 		}
-		display_candidate(itemset_num, true);
+		/* display_candidate(itemset_num, true); */
 
 		if(itemset_num > 1) {
-			log_msg("Assocaition Rule %d-itemsets : ", itemset_num);
+			/* log_msg("Assocaition Rule %d-itemsets : ", itemset_num); */
 			generate_assoc_rule(itemset_num, type);
 		}
 
