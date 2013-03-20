@@ -57,9 +57,12 @@ static int do_on_cleanup(struct kw_metadata *s)
 		free(s->type);
 	}
 	if (s->obj != NULL) {
-		associate_file_metadata(TAG_ARTIST,s->tagv[1],s->obj);
 		associate_file_metadata(TAG_ALBUM,s->tagv[2],s->obj);
-		associate_file_metadata(TAG_GENRE,s->tagv[3],s->obj);
+		associate_tag_metadata(TAG_ARTIST,s->tagv[1],
+		                        TAG_ALBUM,s->tagv[2]);
+		associate_tag_metadata(TAG_GENRE,s->tagv[3],
+		                        TAG_ARTIST,s->tagv[1]);
+
 	}
 
 	for(i=0 ; i<s->tagc ; i++) {

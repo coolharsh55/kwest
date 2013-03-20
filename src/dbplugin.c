@@ -73,6 +73,30 @@ void add_metadata_type(char *mime, char *metadata)
 }
 
 /**
+ * @brief Assign appropriate name if tag empty
+ * @param type - metadata category
+ * @param tag - metadata
+ * @return tagname
+ * @author SG
+ */
+static char *analyze_tag(const char *tag,const char *type)
+{
+	char *newtag = NULL;
+	int taglength = 0;
+
+	if( (tag == NULL) || ((strcmp(tag,"") == 0) || (strcmp(type,tag)==0)
+	                  || (strstr(tag,TAG_UNKNOWN) != NULL))) {
+		taglength = strlen(TAG_UNKNOWN) + strlen(type) + 2;
+		newtag = (char *)malloc(taglength * sizeof(char));
+		newtag = strcpy(newtag, TAG_UNKNOWN);
+		newtag = strcat(newtag, " ");
+		newtag = strcat(newtag, type);
+	}
+
+	return newtag;
+}
+
+/**
  * @brief Form association for metadata in file
  * @param mime Mime Type
  * @param tagname Metadata
@@ -81,25 +105,12 @@ void add_metadata_type(char *mime, char *metadata)
  * @author SG
  */
 void associate_file_metadata(const char *mime,const char *tagname,
-                            const char *fname)
+                             const char *fname)
 {
-	bool is_tag_empty = false;
 	char *newtag=NULL;
-	int taglength = 0;
+
 	/* No meta information */
-	if (tagname == NULL) {
-		is_tag_empty = true;
-	} else if ( (strcmp(tagname,"") == 0) || 
-	    (strcmp(mime,tagname)==0) ||
-	    (strcmp(tagname,TAG_UNKNOWN)==0) ) {
-		is_tag_empty = true;
-	}
-	if (is_tag_empty == true) {
-		taglength = strlen(TAG_UNKNOWN) + strlen(mime) + 2;
-		newtag = (char *)malloc(taglength * sizeof(char));
-		newtag = strcpy(newtag, TAG_UNKNOWN);
-		newtag = strcat(newtag, " ");
-		newtag = strcat(newtag, mime);
+	if((newtag = analyze_tag(tagname,mime)) != NULL) {
 		/* Create Tag Unknown */
 		add_tag(newtag,SYSTEM_TAG);
 		/* Associate Tag Unknown with File Type*/
@@ -107,12 +118,54 @@ void associate_file_metadata(const char *mime,const char *tagname,
 		/* Tag File to Metadata Tag */
 		tag_file(newtag,fname);
 		free((char *)newtag);
-	} else { /* Metadata Exist */
+	} else  /* Metadata Exist */ {
 		/* Create Tag for Metadata */
 		add_tag(tagname,USER_TAG);
 		/* Associate Metadata tag with File Type */
 		add_association(tagname,mime,ASSOC_SUBGROUP);
 		/* Tag File to Metadata Tag */
 		tag_file(tagname,fname);
+	}
+}
+
+/**
+ * @brief Form recursive association between tags to display metadata
+ * @param mime - metadata category
+ * @param tagname - metadata
+ * @param parentmime - metadata category
+ * @param tagname - metadata
+ * @return void
+ * @author SG
+ */
+void associate_tag_metadata(const char *mime,const char *tagname,
+                            const char *parentmime,const char *parent)
+{
+	char *newtag,*parenttag;
+
+	if((newtag = analyze_tag(tagname,mime)) != NULL) {
+		/* Create Tag Unknown */
+		add_tag(newtag,SYSTEM_TAG);
+		/* Associate Tag Unknown with File Type*/
+		add_association(newtag,mime,ASSOC_SUBGROUP);
+		/* Tag File to Metadata Tag */
+		if((parenttag = analyze_tag(parent,parentmime)) != NULL) {
+			add_association(parenttag,newtag,ASSOC_SUBGROUP);
+			free((char *)parenttag);
+		} else {
+			add_association(parent,newtag,ASSOC_SUBGROUP);
+		}
+		free((char *)newtag);
+	} else { /* Metadata Exist */
+		/* Create Tag for Metadata */
+		add_tag(tagname,USER_TAG);
+		/* Associate Metadata tag with File Type */
+		add_association(tagname,mime,ASSOC_SUBGROUP);
+		/* Tag File to Metadata Tag */
+		if((parenttag = analyze_tag(parent,parentmime)) != NULL) {
+			add_association(parenttag,tagname,ASSOC_SUBGROUP);
+			free((char *)parenttag);
+		} else {
+			add_association(parent,tagname,ASSOC_SUBGROUP);
+		}
 	}
 }
