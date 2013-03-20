@@ -143,7 +143,7 @@ static void correct_items(char ***itemset, int *cnt, char *reference, int refcnt
  * @return void
  * @author SG
  */
-static void get_suggestions(char *tagname, char **suggest, int type,
+static void get_suggestions(char *tagname, char **suggest, int type, float conf,
     sqlite3_stmt *(get_id)(const char *tagname),const char *(*get_name)(int id))
 {
 	sqlite3_stmt *stmt;
@@ -159,14 +159,15 @@ static void get_suggestions(char *tagname, char **suggest, int type,
 	suggestcnt = 0;
 
 	datacnt = get_data_string_under_tag(tagname, &data_str, get_id);
-	//log_msg("Tag : %s #%d Files : %s", tagname, datacnt, data_str);
+	/* log_msg("Tag : %s #%d Files : %s", tagname, datacnt, data_str); */
 
 	/* analyze all association rules */
-	sprintf(query,"select tag1,tag2 from AssociationRules where type = %d",
-	        type);
+	sprintf(query,"select tag1,tag2 from AssociationRules where type = %d"
+	              " and conf >= %f", type, conf);
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 
 	do {
+
 		/* Get individual rules */
 		if(SQLITE_ROW != sqlite3_step(stmt)) {
 			break;
@@ -185,7 +186,7 @@ static void get_suggestions(char *tagname, char **suggest, int type,
 		}
 
 		/* Rule Applies, append to suggestions */
-		//log_msg("%s->%s",lhsrule,rhsrule);
+		/* log_msg("rule: %s->%s",lhsrule,rhsrule); */
 
 		token = (char *)malloc(strlen(rhsrule) * sizeof(char));
 		/* Remove Duplication */
@@ -279,7 +280,7 @@ sqlite3_stmt *get_user_tagname(void)
  *
  * @todo Remove unwanted association rules from db after adding new rules
  */
-int add_rule(int type, char *para1, char *para2)
+int add_rule(int type, float c, char *para1, char *para2)
 {
 	sqlite3_stmt *stmt;
 	char query[QUERY_SIZE];
@@ -303,12 +304,13 @@ int add_rule(int type, char *para1, char *para2)
 
 	/* Query : Insert in AssociationRule Table */
 	strcpy(query,"insert into AssociationRules values"
-	             "(:type,:para1,:para2);");
+	             "(:type,:c,:para1,:para2);");
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 
 	sqlite3_bind_int(stmt,1,type);
-	sqlite3_bind_text(stmt,2,para1,-1,SQLITE_STATIC);
-	sqlite3_bind_text(stmt,3,para2,-1,SQLITE_STATIC);
+	sqlite3_bind_double(stmt,2,c);
+	sqlite3_bind_text(stmt,3,para1,-1,SQLITE_STATIC);
+	sqlite3_bind_text(stmt,4,para2,-1,SQLITE_STATIC);
 
 	status = sqlite3_step(stmt);
 
@@ -348,11 +350,41 @@ sqlite3_stmt *get_user_tagged_files(void)
 	return stmt;
 }
 
-char *get_file_suggestions(char *tagname)
+/**
+ * @brief
+ * Get file suggestion using apriori association rules for probablyrelated files
+ * @param tagname
+ * @return file Suggestions String Separated by CHAR_ITEM_SEP
+ * @author SG
+ */
+char *get_file_suggestions_pr(char *tagname)
 {
 	char *suggest = (char *) malloc(MAX_ITEMSET_LENGTH * sizeof(char));
 
-	get_suggestions(tagname, &suggest, FILES, get_fid_under_tag, get_file_name);
+	get_suggestions(tagname, &suggest, FILES, MINCONF, get_fid_under_tag,
+	                get_file_name);
+	/* log_msg("suggest : %s",suggest); */
+
+	if(strcmp(suggest,"") == 0) {
+		free((char *) suggest);
+		return NULL;
+	}
+
+	return suggest;
+}
+
+/**
+ * @brief Get file suggestion using apriori association rules for related files
+ * @param tagname
+ * @return file Suggestions String Separated by CHAR_ITEM_SEP
+ * @author SG
+ */
+char *get_file_suggestions_r(char *tagname)
+{
+	char *suggest = (char *) malloc(MAX_ITEMSET_LENGTH * sizeof(char));
+
+	get_suggestions(tagname, &suggest, FILES, MINCONFR, get_fid_under_tag,
+	                get_file_name);
 	/* log_msg("suggest : %s",suggest); */
 
 	if(strcmp(suggest,"") == 0) {
@@ -400,16 +432,18 @@ sqlite3_stmt *get_user_tagged_tags(void)
 }
 
 /**
- * @brief Get tag suggestions using apriori association rules
+ * @brief
+ * Get tag suggestion using apriori association rules for probablyrelated tags
  * @param tagname
  * @return tag Suggestions String Separated by CHAR_ITEM_SEP
  * @author SG
  */
-char *get_tag_suggestions(char *tagname)
+char *get_tag_suggestions_pr(char *tagname)
 {
 	char *suggest = (char *) malloc(MAX_ITEMSET_LENGTH * sizeof(char));
 
-	get_suggestions(tagname, &suggest, TAGS, get_tid_under_tag, get_tag_name);
+	get_suggestions(tagname, &suggest, TAGS, MINCONF, get_tid_under_tag,
+	                get_tag_name);
 
 	if(strcmp(suggest,"") == 0) {
 		free((char *) suggest);
@@ -418,6 +452,28 @@ char *get_tag_suggestions(char *tagname)
 
 	return suggest;
 }
+
+/**
+ * @brief Get tag suggestion using apriori association rules for related tags
+ * @param tagname
+ * @return tag Suggestions String Separated by CHAR_ITEM_SEP
+ * @author SG
+ */
+char *get_tag_suggestions_r(char *tagname)
+{
+	char *suggest = (char *) malloc(MAX_ITEMSET_LENGTH * sizeof(char));
+
+	get_suggestions(tagname, &suggest, TAGS, MINCONFR, get_tid_under_tag,
+	                get_tag_name);
+
+	if(strcmp(suggest,"") == 0) {
+		free((char *) suggest);
+		return NULL;
+	}
+
+	return suggest;
+}
+
 /* ----------------------------- OTHERS ------------------------------------- */
 
 /**

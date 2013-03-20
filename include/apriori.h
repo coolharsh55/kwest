@@ -26,8 +26,10 @@
 #define FILES 1
 #define TAGS 2
 
-#define MINSUP 0.25
-#define MINCONF 0.65
+#define MINSUP   0.25 /* Minimum support count */
+#define MINCONF  0.5  /* Confidence for probably related file suggestions */
+#define MINCONFR 0.65  /* Confidence for related file suggestions */
+
 #define RULE_LEVEL 1
 
 #define MAX_ITEMSET_LENGTH 4096

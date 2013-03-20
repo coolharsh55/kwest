@@ -518,7 +518,7 @@ static int prune_candidates(int itemset_num)
  * @return Count of frequent candidates
  * @author SG
  */
-static int calculate_frequent_itemsets(int itemset_num, int T,
+static int calculate_frequent_itemsets(int itemset_num, int T, float minsup,
            sqlite3_stmt *(*row)(void), sqlite3_stmt *(*col)(const char *ele))
 {
 	I *lasti;
@@ -588,7 +588,7 @@ static int calculate_frequent_itemsets(int itemset_num, int T,
 		/* log_msg("Frequent %d token %s : %d",itemset_num,
 			  token, lasti->candidate->supportcnt[j]); */
 
-		if(((float)lasti->candidate->supportcnt[j] / T) >= MINSUP) {
+		if(((float)lasti->candidate->supportcnt[j] / T) >= minsup) {
 			if(isfull(frequent, 1)) {
 				/** @todo : traverse link list */
 				log_msg("Insufficient memory to generate "
@@ -659,7 +659,7 @@ static int get_support_count(char *item, int itemset_num)
  * @author SG
  */
 static int get_confident_subsets(int Nsup, char *members, int itemset_num,
-                                   char **sub, int *subcnt,int memsize)
+       char **sub, float **subsetconf, int *subcnt, int memsize, float minconf)
 {
 	char *lhs_itemset;
 	char *token;
@@ -699,7 +699,7 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 		confidence = (float) Nsup / Dsup;
 
 		/* Add subset if canfidence is greater then thershold */
-		if(confidence >= MINCONF) {
+		if(confidence >= minconf) {
 			/* check if itemset already present in rule */
 			if(check_item(*sub, lhs_itemset, *subcnt,
 			               CHAR_ITEMSET_SEP) == 1) {
@@ -715,6 +715,7 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
 			}
 			strcat(*sub, lhs_itemset);
 			strcat(*sub, STR_ITEMSET_SEP);
+			*(*subsetconf + *subcnt) = confidence;
 			*subcnt += 1;
 			/*
 			 log_msg("%d item:%s sub:%s",*subcnt,lhs_itemset, *sub);
@@ -737,7 +738,7 @@ static int get_confident_subsets(int Nsup, char *members, int itemset_num,
  * @author SG
  */
 static char *complete_rule(char *itemset, int itemset_num, char **subsets,
-                            int cnt, int type)
+                           float **subsetconf, int cnt, int type)
 {
 	char *rule;
 	int item_iter, sub_iter;
@@ -791,9 +792,9 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
 			}
 		}
 		rule[strlen(rule) - 1] = '\0';
-		add_rule(type, token, (strrchr(rule, '>') + 1));
+		/* log_msg("addrule %s %f", token, *(*subsetconf + i)); */
+		add_rule(type, *(*subsetconf + i), token, (strrchr(rule, '>') + 1));
 		strcat(rule,STR_ITEMSET_SEP);
-
 	}
 
 	free((char*) itemtmp);
@@ -808,12 +809,13 @@ static char *complete_rule(char *itemset, int itemset_num, char **subsets,
  * @return void
  * @author SG
  */
-static void generate_assoc_rule(int itemset_num, int type)
+static void generate_assoc_rule(int itemset_num, int type, float minconf)
 {
 	I *tmpi;
 	char *maintoken, *token;
 	char *subset, *rule;
-	int subset_cnt;
+	float *subsetconf;
+	int max_subset, subset_cnt;
 	int Nsup;
 
 	int i, j;
@@ -825,8 +827,11 @@ static void generate_assoc_rule(int itemset_num, int type)
 	}
 
 	tmpi = get_itemset(itemset_num);
-	memsize = ((pow(2, itemset_num) - 2) * ((MAX_ITEM_LENGTH * (itemset_num - 1)) + itemset_num - 1)) + 1;
+	max_subset = pow(2, itemset_num) - 2;
+	memsize = (max_subset * ((MAX_ITEM_LENGTH * (itemset_num - 1)) +
+	                          itemset_num - 1)) + 1;
 	subset = (char *) malloc(memsize * sizeof(char));
+	subsetconf = (float *) malloc(max_subset * sizeof(float));
 	maintoken = (char *)malloc(strlen(tmpi->candidate->members) *
 	                           sizeof(char));
 
@@ -843,7 +848,7 @@ static void generate_assoc_rule(int itemset_num, int type)
 
 		/* Calculate Confident Subsets */
 		status = get_confident_subsets(Nsup, maintoken, itemset_num,
-		                                &subset, &subset_cnt, memsize);
+		         &subset, &subsetconf, &subset_cnt, memsize, minconf);
 
 		if(status == KW_SUCCESS) {
 			/* Recursively calculate i-1 subsets */
@@ -862,7 +867,8 @@ static void generate_assoc_rule(int itemset_num, int type)
 				}
 				status = get_confident_subsets(Nsup, token,
 				         get_no_of_items(token), &subset,
-				         &subset_cnt, memsize);
+				         &subsetconf, &subset_cnt, memsize,
+				         minconf);
 				if(status != KW_SUCCESS) {
 					free((char *)token);
 					break;
@@ -873,7 +879,10 @@ static void generate_assoc_rule(int itemset_num, int type)
 
 		/* Complete association rule */
 		rule = complete_rule(maintoken, itemset_num, &subset,
-		                     subset_cnt, type);
+		                     &subsetconf, subset_cnt, type);
+
+		/* for(int j = 0; j < subset_cnt; j++)
+		log_msg("%f",*(subsetconf + j)); */
 
 		/* log_msg("Rule for %s : %s", maintoken ,rule); */
 		free((char *) rule);
@@ -881,6 +890,7 @@ static void generate_assoc_rule(int itemset_num, int type)
 
 	free((char *) maintoken);
 	free((char *) subset);
+	free((float *) subsetconf);
 }
 
 /*------------------------------ GENERAL -------------------------------------*/
@@ -982,7 +992,7 @@ static void apriori_main(int num_transactions, sqlite3_stmt *(*files)(void),
 
 		/* log_msg("Frequent %d-itemsets : ", itemset_num); */
 		candidate_cnt = calculate_frequent_itemsets(itemset_num,
-		                 num_transactions, row, col);
+		                 num_transactions, MINSUP, row, col);
 		if (candidate_cnt == 0) {
 			/* log_msg("No frequent candidate identified"); */
 			break;
@@ -991,7 +1001,7 @@ static void apriori_main(int num_transactions, sqlite3_stmt *(*files)(void),
 
 		if(itemset_num > 1) {
 			/* log_msg("Assocaition Rule %d-itemsets : ", itemset_num); */
-			generate_assoc_rule(itemset_num, type);
+			generate_assoc_rule(itemset_num, type, MINCONF);
 		}
 
 		itemset_num++;

@@ -108,6 +108,33 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	return -EACCES;
 }
 
+static void display_suggestions(char **suggest, char *msg, void *buf,
+                                fuse_fill_dir_t filler, struct stat st)
+{
+	if (*suggest == NULL) {
+		return ;
+	}
+
+	int i = 0;
+	char *entry = (char *)malloc(strlen(*suggest) * sizeof(char));
+	char buffer[QUERY_SIZE];
+
+	do {
+		get_token(&entry, *suggest, i, ',');
+		if (strcmp(entry, "") == 0) {
+			break;
+		}
+		strcpy(buffer, msg);
+		strcat(buffer, entry);
+		filler(buf, buffer, &st, 0);
+		i++;
+	} while(1);
+
+	free((char *) entry);
+	free((char *) *suggest);
+	*suggest = NULL;
+}
+
 /**
  * @fn static int kwest_readdir(const char *path, void *buf,
  *            fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
@@ -131,7 +158,6 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void)fi;
 	const char *direntry = NULL;
 	char *suggest = NULL;
-	char buffer[QUERY_SIZE];
 	void *ptr = NULL;
 	struct stat st;
 	log_msg("readdir: %s",path);
@@ -171,45 +197,21 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		}
 	}
 
-	/** get File suggestions under current path */
-	suggest = get_file_suggestions(strrchr(path,'/') + 1);
-	if (suggest != NULL) {
-		int i = 0;
-		char *entry;
-		entry = (char *)malloc(strlen(suggest) * sizeof(char));
-		do {
-			get_token(&entry, suggest, i, ',');
-			if (strcmp(entry, "") == 0) {
-				break;
-			}
-			strcpy(buffer, "SUGGESTEDFILE - ");
-			strcat(buffer, entry);
-			filler(buf, buffer, &st, 0);
-			i++;
-		} while(1);
-		free((char *) entry);
-		free((char *) suggest);
-	}
+	/** get probably related File suggestions under current path */
+	suggest = get_file_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDFILEPR - ", buf, filler, st);
 
-	/** get Tag suggestions under current path */
-	suggest = get_tag_suggestions(strrchr(path,'/') + 1);
-	if (suggest != NULL) {
-		int i = 0;
-		char *entry;
-		entry = (char *)malloc(strlen(suggest) * sizeof(char));
-		do {
-			get_token(&entry, suggest, i, ',');
-			if (strcmp(entry, "") == 0) {
-				break;
-			}
-			strcpy(buffer, "SUGGESTEDTAG - ");
-			strcat(buffer, entry);
-			filler(buf, buffer, &st, 0);
-			i++;
-		} while(1);
-		free((char *) entry);
-		free((char *) suggest);
-	}
+	/** get related File suggestions under current path */
+	suggest = get_file_suggestions_r(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDFILER - ", buf, filler, st);
+
+	/** get probably related Tag suggestions under current path */
+	suggest = get_tag_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDTAGPR - ", buf, filler, st);
+
+	/** get related Tag suggestions under current path */
+	suggest = get_tag_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDTAGR - ", buf, filler, st);
 
 	return 0;
 }

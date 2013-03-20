@@ -122,7 +122,7 @@ int create_db(void)
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	strcpy(query,"create table if not exists AssociationRules "
-	"(type integer,tag1 text,tag2 text);");
+	"(type integer,conf real,tag1 text,tag2 text);");
 	status = sqlite3_exec(get_kwdb(),query,0,0,0);
 
 	/* Possible Tag-Tag Relations */
