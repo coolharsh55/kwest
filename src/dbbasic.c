@@ -639,6 +639,35 @@ int add_association(const char *t1,const char *t2,int associationid)
 }
 
 /**
+ * @brief is_file_tagged_as
+ * @param filename 
+ * @param tagname 
+ * @returns true
+ * 
+ * 
+ */
+bool is_file_tagged_as(const char *filename, const char *tagname) {
+	int fno = get_file_id(filename);
+	int tno = get_tag_id(tagname);
+	sqlite3_stmt *stmt = NULL;
+	char query[QUERY_SIZE];
+	int status = 0;
+	
+	sprintf(query, "select count(*) from FileAssociation where tno=%d" 
+	               " and fno=%d;", tno, fno);
+	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+	status = sqlite3_step(stmt);
+	if(status == SQLITE_ROW) {
+		status = atoi((const char*)sqlite3_column_text(stmt,0));
+		sqlite3_finalize(stmt);
+		if (status == 1) return true;
+		else return false;
+	}
+	sqlite3_finalize(stmt);
+	return false;
+}
+
+/**
  * @brief Remove the existing association between the two tags
  * @param t1,t2 - tagname of both tags whose associated is to be removed
  * @param associationid - relation between tags to be removed

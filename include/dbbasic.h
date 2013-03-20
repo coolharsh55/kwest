@@ -155,4 +155,6 @@ char *get_abspath_by_fname(const char *fname);
  */
 int rename_file(const char *from, const char *to);
 
+bool is_file_tagged_as(const char *filename, const char *tagname);
+
 #endif

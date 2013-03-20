@@ -55,6 +55,7 @@
  */
  
 static char **cp_path() {
+	static char cpstring[] = "test string";
 	static char *store_path_for_cp = NULL;
 	return &store_path_for_cp;
 }
@@ -363,8 +364,12 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
 {
 	int res;
 	const char *abspath = NULL;
-	/*
+	
 	char **cppath = cp_path();
+	if (*cppath == NULL) {
+		*cppath = strdup(path);
+	}
+	/*
 	if (cppath != NULL) {
 		if (*cppath != NULL) {
 			free(*cppath);

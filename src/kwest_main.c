@@ -161,7 +161,9 @@ int main(int argc, char *argv[])
 	begin_transaction();
 	/** Validate Database entries */
 	check_db_consistency();
+	commit_transaction();
 	/** import files into kwest */
+	begin_transaction();
 	printf("Importing file from %s\n",musicdir);
 	if(import(musicdir) == KW_SUCCESS) {
 		log_msg("Importing files = SUCCESS");
@@ -172,6 +174,9 @@ int main(int argc, char *argv[])
 		printf("Exiting program...\n");
 		return -1;
 	}
+	commit_transaction();
+	
+	begin_transaction();
 	apriori();
 	commit_transaction();
 	/** restore stderr to default */
