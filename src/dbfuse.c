@@ -156,6 +156,81 @@ int check_path_validity(const char *path)
 }
 
 /**
+ * @brief checks whether current tags in path is valid in database
+ * @param path
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author HP SG
+ */
+int check_path_tags_validity(const char *_path)
+{
+	char *path,*tmp_ptr;
+	/** @todo check path validity does not work correctly if the said
+	 * filename already exists. It then assumes that the path is valid.
+	 * Even if the file exists, it's associations with tags in the path
+	 * should be checked and only then the path is validated
+	 */
+	path = strdup(_path);
+	log_msg("%s",path);
+	if (*(path + 1) == '\0') {
+		log_msg("is_root");
+		free(path);
+		return KW_SUCCESS;
+	}
+	/** @bug tagname could be NULL
+	 * entry returned from here causes segmentation fault
+	 */
+	
+	tmp_ptr = strrchr(path, '/'); *tmp_ptr = '\0';
+	
+	if (tmp_ptr != NULL) {
+		log_msg("tmp_ptr not NULL");
+	} else {
+		log_msg("tmp_ptr is NULL");
+	}
+	
+	
+	if (istag(get_entry_name(path)) == true) {
+		log_msg("istag PASS");
+		if (check_association(path) == KW_SUCCESS) {
+			log_msg("istag");
+			free(path);
+			return KW_SUCCESS;
+		}
+	/*
+	} else if (isfile(get_entry_name(path)) == true) {
+		tmp_path = strdup(path);
+		tmp_ptr = strrchr(tmp_path,'/');
+		*tmp_ptr='\0';
+		if (check_association(tmp_path) == KW_SUCCESS) {
+			if (is_file_tagged_as(tmp_ptr+1, 
+			    strrchr(tmp_path,'/')+1) == false) {
+				free((char *)tmp_path);
+				return -ENOENT;
+			}
+			free((char *)tmp_path);
+			return KW_SUCCESS;
+		}
+		free((char *)tmp_path);
+		*/
+	} else {
+		free(path);
+		return -ENOENT;	
+	}
+	/*
+	 * const char *tag1 = strchr(path);
+	 * if (tag1 == path) { / * no of entries = 1 * /
+		 * return KW_SUCCESS;
+	 * }
+	 * 
+	 * const char *tag2 = strchr(tag1 - 1);
+	 * 
+	 */
+	free(path);
+	return KW_FAIL;
+}
+
+
+/**
  * @brief checks whether given path has a directory entry
  * @param path
  * @return true if _is_dir else false
@@ -276,7 +351,7 @@ const char *get_newfile_path(const char *path)
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author HP
  */
-int rename_this_file(const char *_from, const char *_to)
+int rename_this_file(const char *_from, const char *_to, int mode)
 {
 	char *from = strdup(_from);
 	char *to = strdup(_to);
@@ -308,21 +383,31 @@ int rename_this_file(const char *_from, const char *_to)
 	tag1 = strrchr(_from,'/'); tag2 = strrchr(_to,'/');
 	*tag1 = '\0'; *tag2 = '\0';
 	tag1 = strrchr(_from,'/')+1; tag2 = strrchr(_to,'/')+1;
-	log_msg("untag %s from %s", file1, tag1);
 	log_msg("tag %s in %s",file1, tag2);
 	
-	//if (untag_file(tag1, file1) == KW_SUCCESS) {
+	if (mode == DBFUSE_MV) {
+		log_msg("untag %s from %s", file1, tag1);
+		if (untag_file(tag1, file1) == KW_SUCCESS) {
+			if (tag_file(tag2, file1) == KW_SUCCESS) {
+				log_msg("tag operation successfull");
+			} else {
+				log_msg("tag operation failed");
+				ret = KW_ERROR;
+			}
+			log_msg("mv operation successfull");
+		} else {
+			log_msg("mv operation failed");
+			ret = KW_ERROR;
+		}
+	} else if (mode == DBFUSE_CP) {
 		if (tag_file(tag2, file1) == KW_SUCCESS) {
 			log_msg("tag operation successfull");
 		} else {
 			log_msg("tag operation failed");
 			ret = KW_ERROR;
 		}
-		log_msg("mv operation successfull");
-	//} else {
-	//	log_msg("mv operation failed");
-	//	ret = KW_ERROR;
-	//}
+		log_msg("cp operation successfull");
+	}
 	free(from); free(to); free(file1);
 	return ret;
 }
@@ -381,7 +466,7 @@ int make_directory(const char *path, mode_t mode)
 	log_msg ("make_directory: %s",path);
 	newtag = (char *)get_entry_name(path);
 	
-	if (add_tag(newtag,USER_TAG) != KW_SUCCESS) {
+	if (add_tag(newtag,USER_MADE_TAG) != KW_SUCCESS) {
 		log_msg ("make_directory: failed to add tag %s",newtag);
 		return KW_FAIL;
 	}

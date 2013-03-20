@@ -64,10 +64,12 @@ int add_tag(const char *tagname,int tagtype)
 	int tno; /* Tag ID */
 
 	/* Call Function to set tno for Tag */
-	if(tagtype == USER_TAG){
+	if (tagtype == USER_TAG){
 		tno = set_tag_id(tagname,USER_TAG); /* Add User Tag */
-	} else if(tagtype == SYSTEM_TAG) {
+	} else if (tagtype == SYSTEM_TAG) {
 		tno = set_tag_id(tagname,SYSTEM_TAG); /* Add System Tag */
+	} else if (tagtype == USER_MADE_TAG) {
+		tno = set_tag_id(tagname,USER_MADE_TAG); /* Add System Tag */
 	}
 
 	/* Return if Tag Exists */
@@ -83,7 +85,7 @@ int add_tag(const char *tagname,int tagtype)
 	sqlite3_bind_text(stmt,2,tagname,-1,SQLITE_STATIC);
 
 	status = sqlite3_step(stmt);
-	if(status == SQLITE_DONE){
+	if (status == SQLITE_DONE){
 		sqlite3_finalize(stmt);
 		return KW_SUCCESS;
 	}
@@ -639,35 +641,6 @@ int add_association(const char *t1,const char *t2,int associationid)
 }
 
 /**
- * @brief is_file_tagged_as
- * @param filename 
- * @param tagname 
- * @returns true
- * 
- * 
- */
-bool is_file_tagged_as(const char *filename, const char *tagname) {
-	int fno = get_file_id(filename);
-	int tno = get_tag_id(tagname);
-	sqlite3_stmt *stmt = NULL;
-	char query[QUERY_SIZE];
-	int status = 0;
-	
-	sprintf(query, "select count(*) from FileAssociation where tno=%d" 
-	               " and fno=%d;", tno, fno);
-	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
-	status = sqlite3_step(stmt);
-	if(status == SQLITE_ROW) {
-		status = atoi((const char*)sqlite3_column_text(stmt,0));
-		sqlite3_finalize(stmt);
-		if (status == 1) return true;
-		else return false;
-	}
-	sqlite3_finalize(stmt);
-	return false;
-}
-
-/**
  * @brief Remove the existing association between the two tags
  * @param t1,t2 - tagname of both tags whose associated is to be removed
  * @param associationid - relation between tags to be removed
@@ -999,6 +972,37 @@ bool isfile(const char *f)
 	sqlite3_finalize(stmt);
 	return KW_FAIL;
 }
+
+
+/**
+ * @brief is_file_tagged_as
+ * @param filename 
+ * @param tagname 
+ * @returns true
+ * 
+ * 
+ */
+bool is_file_tagged_as(const char *filename, const char *tagname) {
+	int fno = get_file_id(filename);
+	int tno = get_tag_id(tagname);
+	sqlite3_stmt *stmt = NULL;
+	char query[QUERY_SIZE];
+	int status = 0;
+	
+	sprintf(query, "select count(*) from FileAssociation where tno=%d" 
+	               " and fno=%d;", tno, fno);
+	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+	status = sqlite3_step(stmt);
+	if(status == SQLITE_ROW) {
+		status = atoi((const char*)sqlite3_column_text(stmt,0));
+		sqlite3_finalize(stmt);
+		if (status == 1) return true;
+		else return false;
+	}
+	sqlite3_finalize(stmt);
+	return false;
+}
+
 
 /**
  * @brief Return absolute path of file
