@@ -312,7 +312,7 @@ int make_directory(const char *path, mode_t mode)
 	log_msg ("make_directory: %s",path);
 	newtag = (char *)get_entry_name(path);
 	
-	if (add_tag(newtag,USER_TAG) != KW_SUCCESS) {
+	if (add_tag(newtag,USER_MADE_TAG) != KW_SUCCESS) {
 		log_msg ("make_directory: failed to add tag %s",newtag);
 		return KW_FAIL;
 	}

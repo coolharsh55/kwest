@@ -64,10 +64,12 @@ int add_tag(const char *tagname,int tagtype)
 	int tno; /* Tag ID */
 
 	/* Call Function to set tno for Tag */
-	if(tagtype == USER_TAG){
+	if (tagtype == USER_TAG){
 		tno = set_tag_id(tagname,USER_TAG); /* Add User Tag */
-	} else if(tagtype == SYSTEM_TAG) {
+	} else if (tagtype == SYSTEM_TAG) {
 		tno = set_tag_id(tagname,SYSTEM_TAG); /* Add System Tag */
+	} else if (tagtype == USER_MADE_TAG) {
+		tno = set_tag_id(tagname,USER_MADE_TAG); /* Add System Tag */
 	}
 
 	/* Return if Tag Exists */
@@ -83,7 +85,7 @@ int add_tag(const char *tagname,int tagtype)
 	sqlite3_bind_text(stmt,2,tagname,-1,SQLITE_STATIC);
 
 	status = sqlite3_step(stmt);
-	if(status == SQLITE_DONE){
+	if (status == SQLITE_DONE){
 		sqlite3_finalize(stmt);
 		return KW_SUCCESS;
 	}
