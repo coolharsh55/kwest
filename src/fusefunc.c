@@ -53,11 +53,17 @@
  * @see kwest_readdir
  * @ee kwest_access
  */
+ 
+static char **cp_path() {
+	static char *store_path_for_cp = NULL;
+	return &store_path_for_cp;
+}
+
 static int kwest_getattr(const char *path, struct stat *stbuf)
 {
 	const char *abspath = NULL;
-	log_msg("getattribute: %s",path);
 	/** check if path is root */
+	log_msg("getattr: %s", path);
 	if(_is_path_root(path) == true) {
 		/*log_msg("PATH IS ROOT");*/
 		stbuf->st_mode= S_IFDIR | KW_STDIR;
@@ -357,10 +363,20 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
 {
 	int res;
 	const char *abspath = NULL;
+	/*
+	char **cppath = cp_path();
+	if (cppath != NULL) {
+		if (*cppath != NULL) {
+			free(*cppath);
+		}
+		*cppath = strdup(path);
+		log_msg("cp param 1: %s", *cppath);
+	}
+	*/
 	log_msg("open: %s",path);
 
 	if(check_path_validity(path) != KW_SUCCESS) {
-		log_msg("PATH NOT VALID");
+		log_msg("OPEN>>PATH NOT VALID");
 		return -ENOENT;
 	}
 
@@ -395,8 +411,16 @@ static int kwest_release(const char *path, struct fuse_file_info *fi)
 	(void)fi;
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
-	log_msg("release: %s",path);
+	/*
+	char **cppath = cp_path();
+	log_msg("free cp param 1: %s", *cppath);   
+	if (*cppath != NULL) {
+		free(*cppath);
+	}
+	*/
 
+	log_msg("release: %s",path);
+	
 	return 0;
 }
 
@@ -430,6 +454,12 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 	 */
 	int res;
 	const char *abspath = get_absolute_path(path);
+	/*
+	char **cppath = cp_path();
+	if (*cppath != NULL) {
+		log_msg("cp %s %s", *cppath, path);
+	}
+	*/
 	log_msg("mknod: %s",path);
 
 	if(check_path_validity(path) != KW_SUCCESS) {
