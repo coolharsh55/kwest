@@ -145,6 +145,8 @@ bool istag(const char *t);
  */
 bool isfile(const char *f);
 
+
+bool is_file_tagged_as(const char *f, const char *t);
 /*
  * Return absolute path of file
  */

@@ -343,6 +343,11 @@ int kwest_rmdir(const char *path)
 
 /* FILE FUNCTIONS */
 
+static char *get_cp_path()
+{
+	static char cppath[QUERY_SIZE];
+	return cppath;
+}
 
 /**
  * @fn static int kwest_open(const char *path, struct fuse_file_info *fi)
@@ -359,6 +364,10 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
 	const char *abspath = NULL;
 	log_msg("open: %s",path);
 
+	char *cppath = get_cp_path();
+	cppath = strcpy(cppath, path);
+	log_msg("cppath: %s",cppath);
+	
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
@@ -396,7 +405,11 @@ static int kwest_release(const char *path, struct fuse_file_info *fi)
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
 	log_msg("release: %s",path);
-
+	char *cppath = get_cp_path();
+	if (*cppath != '$') {
+		log_msg("cppath: %s",cppath);
+		*cppath = '$';
+	}
 	return 0;
 }
 
@@ -432,7 +445,7 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 	const char *abspath = get_absolute_path(path);
 	log_msg("mknod: %s",path);
 
-	if(check_path_validity(path) != KW_SUCCESS) {
+	if(check_path_tags_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
