@@ -145,6 +145,8 @@ bool istag(const char *t);
  */
 bool isfile(const char *f);
 
+
+bool is_file_tagged_as(const char *f, const char *t);
 /*
  * Return absolute path of file
  */
@@ -154,5 +156,7 @@ char *get_abspath_by_fname(const char *fname);
  * Rename file existing in kwest
  */
 int rename_file(const char *from, const char *to);
+
+bool is_file_tagged_as(const char *filename, const char *tagname);
 
 #endif

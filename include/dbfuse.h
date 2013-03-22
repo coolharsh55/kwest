@@ -26,6 +26,8 @@
 #include <sys/stat.h>
 #include "flags.h"
 
+#define DBFUSE_CP 111
+#define DBFUSE_MV 121
 
 /*
  * checks whether given path is ROOT
@@ -37,6 +39,7 @@ bool _is_path_root(const char *path);
  */
 int check_path_validity(const char *path);
 
+int check_path_tags_validity(const char *path);
 /*
  * checks whether given path has a directory entry
  */
@@ -70,7 +73,7 @@ const char *get_newfile_path(const char *path);
 /*
  * rename the said file from -> to
  */
-int rename_this_file(const char *from, const char *to);
+int rename_this_file(const char *from, const char *to, int mode);
 
 /*
  * remove the said file

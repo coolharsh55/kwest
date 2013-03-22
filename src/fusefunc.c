@@ -53,10 +53,10 @@
  * @see kwest_readdir
  * @ee kwest_access
  */
+ 
 static int kwest_getattr(const char *path, struct stat *stbuf)
 {
 	const char *abspath = NULL;
-	log_msg("getattribute: %s",path);
 	/** check if path is root */
 	if(_is_path_root(path) == true) {
 		/*log_msg("PATH IS ROOT");*/
@@ -65,6 +65,7 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 		return 0;
 	}
 	/** check is path is a virtual suggestion */
+	log_msg("getattr: %s", path);
 	char *pre;
 	if(strlen(path)>10) {
 		pre = strdup(strrchr(path,'/'));
@@ -343,6 +344,11 @@ int kwest_rmdir(const char *path)
 
 /* FILE FUNCTIONS */
 
+static char *get_cp_path()
+{
+	static char cppath[QUERY_SIZE];
+	return cppath;
+}
 
 /**
  * @fn static int kwest_open(const char *path, struct fuse_file_info *fi)
@@ -359,15 +365,28 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
 	const char *abspath = NULL;
 	log_msg("open: %s",path);
 
+	char *cppath = get_cp_path();
+	/*
+	if (strcmp(strrchr(cppath,'/')+1,strrchr(path,'/')+1) == 0) {
+		log_msg("file double open error");
+		return 0;
+	} else {
+		*/
+		cppath = strcpy(cppath, path);
+		log_msg("cppath: %s",cppath);
+	//}
+	
 	if(check_path_validity(path) != KW_SUCCESS) {
-		log_msg("PATH NOT VALID");
+		log_msg("OPEN>>PATH NOT VALID");
 		return -ENOENT;
 	}
 
-	abspath = get_absolute_path(path); /* get absolute path on disk */
+
+	abspath = get_absolute_path(cppath); /* get absolute path on disk */
 	if(abspath == NULL) {
 		log_msg("ABSOLUTE PATH ERROR");
-		return -EIO;
+		//return -EIO;
+		return 0;
 	}
 
 	res = open(abspath, fi->flags); /* open system call */
@@ -396,7 +415,7 @@ static int kwest_release(const char *path, struct fuse_file_info *fi)
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
 	log_msg("release: %s",path);
-
+	
 	return 0;
 }
 
@@ -428,11 +447,15 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 	 * kwest_mknod. cp/mv will work correctly when it is from kwest
 	 * to any other filesystem. internal working is buggy / incorrect.
 	 */
-	int res;
+	(void)mode;
+	(void)rdev;
+	char *path2 = NULL;
 	const char *abspath = get_absolute_path(path);
 	log_msg("mknod: %s",path);
 
-	if(check_path_validity(path) != KW_SUCCESS) {
+	char *cppath = get_cp_path();
+
+	if(check_path_tags_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;
 	}
@@ -441,17 +464,21 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 		log_msg("ABSOLUTE PATH ERROR");
 		return -EIO;
 	}
-
-	if (S_ISREG(mode)) { /* check permissions */
+	path2 = strdup(path);
+	rename_this_file(cppath, path2, DBFUSE_CP);
+	free(path2);
+	
+	/*
+	if (S_ISREG(mode)) { 
 		log_msg("MKNOD FILE MODE");
 		res = open(abspath, O_CREAT | O_EXCL | O_WRONLY, mode);
-		if (res >= 0) { /* call system calls to create file */
+		if (res >= 0) { 
 			res = close(res);
 		}
 	} else {
-		if (S_ISFIFO(mode)) { /* file is a pipe */
+		if (S_ISFIFO(mode)) { 
 			res = mkfifo(abspath, mode);
-		} else { /* its a file */
+		} else { 
 			log_msg("FILE MODE PROGRAM");
 			res = mknod(abspath, mode, rdev);
 		}
@@ -459,7 +486,7 @@ static int kwest_mknod(const char *path, mode_t mode, dev_t rdev)
 	if (res == -1) {
 		return -errno;
 	}
-
+	*/
 	return 0;
 }
 
@@ -482,7 +509,7 @@ static int kwest_rename(const char *from, const char *to)
 		return -ENOENT;
 	}
 
-	return rename_this_file(from, to);
+	return rename_this_file(from, to, DBFUSE_MV);
 }
 
 
@@ -528,7 +555,8 @@ static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 	int fd = 0;
 	int res = 0;
 	const char *abspath = NULL;
-
+	char *readfile = get_cp_path();
+	strcpy(readfile, path);
 	log_msg ("read: %s",path);
 
 	if(check_path_validity(path) != KW_SUCCESS) {
@@ -579,6 +607,11 @@ static int kwest_write(const char *path, const char *buf, size_t size,
 	int fd = 0;
 	int res = 0;
 	const char *abspath = NULL;
+	char *writefile = get_cp_path();
+	if (strcmp(strrchr(writefile,'/')+1,strrchr(path,'/')+1) == 0) {
+		log_msg("internal write op");
+		return size;
+	}
 
 	log_msg ("write: %s",path);
 
@@ -623,7 +656,12 @@ static int kwest_truncate(const char *path, off_t size)
 	int res;
 
 	const char *abspath = NULL;
-
+	char *truncatefile = get_cp_path();
+	//log_msg("cppath: %s", truncatefile);
+	if (strcmp(strrchr(truncatefile,'/')+1,strrchr(path,'/')+1) == 0) {
+		log_msg("internal write op");
+		return 0;
+	}
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");
 		return -ENOENT;

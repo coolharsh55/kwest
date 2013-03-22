@@ -64,10 +64,12 @@ int add_tag(const char *tagname,int tagtype)
 	int tno; /* Tag ID */
 
 	/* Call Function to set tno for Tag */
-	if(tagtype == USER_TAG){
+	if (tagtype == USER_TAG){
 		tno = set_tag_id(tagname,USER_TAG); /* Add User Tag */
-	} else if(tagtype == SYSTEM_TAG) {
+	} else if (tagtype == SYSTEM_TAG) {
 		tno = set_tag_id(tagname,SYSTEM_TAG); /* Add System Tag */
+	} else if (tagtype == USER_MADE_TAG) {
+		tno = set_tag_id(tagname,USER_MADE_TAG); /* Add System Tag */
 	}
 
 	/* Return if Tag Exists */
@@ -83,7 +85,7 @@ int add_tag(const char *tagname,int tagtype)
 	sqlite3_bind_text(stmt,2,tagname,-1,SQLITE_STATIC);
 
 	status = sqlite3_step(stmt);
-	if(status == SQLITE_DONE){
+	if (status == SQLITE_DONE){
 		sqlite3_finalize(stmt);
 		return KW_SUCCESS;
 	}
@@ -437,6 +439,15 @@ int untag_file(const char *t,const char *f)
 
 	status = sqlite3_step(stmt);
 	if(status == SQLITE_ROW) {
+		/** @bug mv operation untag file gives segmentation fault
+		 * dbkey.c: in get_field_id (querystring=0x40ae98 
+		 * "select fno from FileDetails where fname = :fieldname;", 
+		 * fieldname=0x1 <Address 0x1 out of bounds>) at dbkey.c:160
+		 * dbkey.c: get_field_id("select fno from FileDetails where "
+	                    "fname = :fieldname;", fname);
+		 * dbbasic.c: status = remove_file(f);
+		 */
+		return KW_SUCCESS;
 		if(atoi((const char*)sqlite3_column_text(stmt,0)) == 0) {
 			sqlite3_finalize(stmt);
 			status = remove_file(f);
@@ -904,14 +915,24 @@ bool istag(const char *t)
 {
 	sqlite3_stmt *stmt;
 	char query[QUERY_SIZE];
-	int status;
+	int status = 0;
 	int tmp;  /* To Hold result of Query */
-
+	/** @bug tagname could be NULL
+	if (t == NULL) {
+		t = (char *)strdup("TestDir");
+		log_msg("t was NULL");
+		status = 1;
+	}
+	*/
 	/* check if tag with name t exist */
 	sprintf(query,"select count(*) from TagDetails where tagname = :t;");
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 	sqlite3_bind_text(stmt,1,t,-1,SQLITE_STATIC);
-
+	/* workaround for bug
+	if (status == 1) {
+		free((char *)t);
+	}
+	*/
 	status = sqlite3_step(stmt);
 	if(status == SQLITE_ROW) {
 		tmp = atoi((const char*)sqlite3_column_text(stmt,0));
@@ -951,6 +972,37 @@ bool isfile(const char *f)
 	sqlite3_finalize(stmt);
 	return KW_FAIL;
 }
+
+
+/**
+ * @brief is_file_tagged_as
+ * @param filename 
+ * @param tagname 
+ * @returns true
+ * 
+ * 
+ */
+bool is_file_tagged_as(const char *filename, const char *tagname) {
+	int fno = get_file_id(filename);
+	int tno = get_tag_id(tagname);
+	sqlite3_stmt *stmt = NULL;
+	char query[QUERY_SIZE];
+	int status = 0;
+	
+	sprintf(query, "select count(*) from FileAssociation where tno=%d" 
+	               " and fno=%d;", tno, fno);
+	status = sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
+	status = sqlite3_step(stmt);
+	if(status == SQLITE_ROW) {
+		status = atoi((const char*)sqlite3_column_text(stmt,0));
+		sqlite3_finalize(stmt);
+		if (status == 1) return true;
+		else return false;
+	}
+	sqlite3_finalize(stmt);
+	return false;
+}
+
 
 /**
  * @brief Return absolute path of file

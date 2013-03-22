@@ -46,6 +46,8 @@ static int initializations(void)
 }
 
 static int associate_image_metadata(struct kw_metadata *s) {
+	/** @todo explicit/implicit associate_file_metadata */
+	/*associate_file_metadata(TAG_IMAGE_CREATOR, s->tagv[0], s->obj);*/
 	associate_file_metadata(TAG_IMAGE_DATE, s->tagv[1], s->obj);
 	associate_tag_metadata(TAG_IMAGE_CREATOR, s->tagv[0],
 		               TAG_IMAGE_DATE, s->tagv[1]);

@@ -54,7 +54,7 @@ bool _is_path_root(const char *path)
  */
 static const char *get_entry_name(const char *path)
 {
-	return (strrchr(path, '/') + 1);
+	return (strrchr(path, '/') + 1 );
 }
 
 /**
@@ -100,12 +100,30 @@ static int check_association(const char *path)
 int check_path_validity(const char *path)
 {
 	char *tmp_path,*tmp_ptr;
-	
+	/** @todo check path validity does not work correctly if the said
+	 * filename already exists. It then assumes that the path is valid.
+	 * Even if the file exists, it's associations with tags in the path
+	 * should be checked and only then the path is validated
+	 */
 	if (*(path + 1) == '\0') {
+		log_msg("is_root");
 		return KW_SUCCESS;
 	}
+	/** @bug tagname could be NULL
+	 * entry returned from here causes segmentation fault
+	 */
+	/*
+	tmp_ptr = (char *)get_entry_name(path);
+	if (tmp_ptr != NULL) {
+		log_msg("tmp_ptr not NULL");
+	} else {
+		log_msg("tmp_ptr is NULL");
+	}
+	*/
+	
 	if (istag(get_entry_name(path)) == true) {
 		if (check_association(path) == KW_SUCCESS) {
+			log_msg("istag");
 			return KW_SUCCESS;
 		}
 	} else if (isfile(get_entry_name(path)) == true) {
@@ -113,6 +131,11 @@ int check_path_validity(const char *path)
 		tmp_ptr = strrchr(tmp_path,'/');
 		*tmp_ptr='\0';
 		if (check_association(tmp_path) == KW_SUCCESS) {
+			if (is_file_tagged_as(tmp_ptr+1, 
+			    strrchr(tmp_path,'/')+1) == false) {
+				free((char *)tmp_path);
+				return -ENOENT;
+			}
 			free((char *)tmp_path);
 			return KW_SUCCESS;
 		}
@@ -131,6 +154,81 @@ int check_path_validity(const char *path)
 	 */
 	return KW_FAIL;
 }
+
+/**
+ * @brief checks whether current tags in path is valid in database
+ * @param path
+ * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
+ * @author HP SG
+ */
+int check_path_tags_validity(const char *_path)
+{
+	char *path,*tmp_ptr;
+	/** @todo check path validity does not work correctly if the said
+	 * filename already exists. It then assumes that the path is valid.
+	 * Even if the file exists, it's associations with tags in the path
+	 * should be checked and only then the path is validated
+	 */
+	path = strdup(_path);
+	log_msg("%s",path);
+	if (*(path + 1) == '\0') {
+		log_msg("is_root");
+		free(path);
+		return KW_SUCCESS;
+	}
+	/** @bug tagname could be NULL
+	 * entry returned from here causes segmentation fault
+	 */
+	
+	tmp_ptr = strrchr(path, '/'); *tmp_ptr = '\0';
+	
+	if (tmp_ptr != NULL) {
+		log_msg("tmp_ptr not NULL");
+	} else {
+		log_msg("tmp_ptr is NULL");
+	}
+	
+	
+	if (istag(get_entry_name(path)) == true) {
+		log_msg("istag PASS");
+		if (check_association(path) == KW_SUCCESS) {
+			log_msg("istag");
+			free(path);
+			return KW_SUCCESS;
+		}
+	/*
+	} else if (isfile(get_entry_name(path)) == true) {
+		tmp_path = strdup(path);
+		tmp_ptr = strrchr(tmp_path,'/');
+		*tmp_ptr='\0';
+		if (check_association(tmp_path) == KW_SUCCESS) {
+			if (is_file_tagged_as(tmp_ptr+1, 
+			    strrchr(tmp_path,'/')+1) == false) {
+				free((char *)tmp_path);
+				return -ENOENT;
+			}
+			free((char *)tmp_path);
+			return KW_SUCCESS;
+		}
+		free((char *)tmp_path);
+		*/
+	} else {
+		free(path);
+		return -ENOENT;	
+	}
+	/*
+	 * const char *tag1 = strchr(path);
+	 * if (tag1 == path) { / * no of entries = 1 * /
+		 * return KW_SUCCESS;
+	 * }
+	 * 
+	 * const char *tag2 = strchr(tag1 - 1);
+	 * 
+	 */
+	free(path);
+	return KW_FAIL;
+}
+
 
 /**
  * @brief checks whether given path has a directory entry
@@ -253,9 +351,65 @@ const char *get_newfile_path(const char *path)
  * @return KW_SUCCESS: SUCCESS, KW_FAIL: FAIL, KW_ERROR: ERROR
  * @author HP
  */
-int rename_this_file(const char *from, const char *to)
+int rename_this_file(const char *_from, const char *_to, int mode)
 {
-	return rename_file(from,to);
+	char *from = strdup(_from);
+	char *to = strdup(_to);
+	char *file1 = strrchr(from, '/');
+	char *file2 = strrchr(to,   '/');
+	char *tag1 = NULL;
+	char *tag2 = NULL;
+	int ret = KW_SUCCESS;
+	if (strcmp(file1, file2) == 0) {
+		log_msg("%s mv OK",file1);
+	} else {
+		log_msg("%s diff %s",file1,file2);
+		return -EPERM;
+	}
+	/** deprecated return rename_file(from,to); */
+	/** @todo check move paths
+	 * file can be moved only within correct folder domains
+	 * e.g. within audio, within image, within files etc.
+	 * moving between say audio and image should be RESTRICTED
+	 */
+	if (strcmp(strtok(from, "/"), strtok(to, "/")) != 0) {
+		if (strstr(_to, "/harsh") != _to) {
+			log_msg("DOMAIN of mv not same");
+			return -EPERM;
+		}
+	}
+	*file1 = '\0'; *file2 = '\0';
+	file1 = strdup(file1 + 1);
+	tag1 = strrchr(_from,'/'); tag2 = strrchr(_to,'/');
+	*tag1 = '\0'; *tag2 = '\0';
+	tag1 = strrchr(_from,'/')+1; tag2 = strrchr(_to,'/')+1;
+	log_msg("tag %s in %s",file1, tag2);
+	
+	if (mode == DBFUSE_MV) {
+		log_msg("untag %s from %s", file1, tag1);
+		if (untag_file(tag1, file1) == KW_SUCCESS) {
+			if (tag_file(tag2, file1) == KW_SUCCESS) {
+				log_msg("tag operation successfull");
+			} else {
+				log_msg("tag operation failed");
+				ret = KW_ERROR;
+			}
+			log_msg("mv operation successfull");
+		} else {
+			log_msg("mv operation failed");
+			ret = KW_ERROR;
+		}
+	} else if (mode == DBFUSE_CP) {
+		if (tag_file(tag2, file1) == KW_SUCCESS) {
+			log_msg("tag operation successfull");
+		} else {
+			log_msg("tag operation failed");
+			ret = KW_ERROR;
+		}
+		log_msg("cp operation successfull");
+	}
+	free(from); free(to); free(file1);
+	return ret;
 }
 
 /**
@@ -312,7 +466,7 @@ int make_directory(const char *path, mode_t mode)
 	log_msg ("make_directory: %s",path);
 	newtag = (char *)get_entry_name(path);
 	
-	if (add_tag(newtag,USER_TAG) != KW_SUCCESS) {
+	if (add_tag(newtag,USER_MADE_TAG) != KW_SUCCESS) {
 		log_msg ("make_directory: failed to add tag %s",newtag);
 		return KW_FAIL;
 	}
