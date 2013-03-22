@@ -68,8 +68,9 @@ int add_tag(const char *tagname,int tagtype)
 		tno = set_tag_id(tagname,USER_TAG); /* Add User Tag */
 	} else if(tagtype == SYSTEM_TAG) {
 		tno = set_tag_id(tagname,SYSTEM_TAG); /* Add System Tag */
+	} else if(tagtype == USER_MADE_TAG) {
+		tno = set_tag_id(tagname,USER_MADE_TAG); /* Add User Tag */
 	}
-
 	/* Return if Tag Exists */
 	if(tno == KW_FAIL){
 		return KW_ERROR;
