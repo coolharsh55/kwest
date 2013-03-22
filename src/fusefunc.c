@@ -57,6 +57,7 @@
 static int kwest_getattr(const char *path, struct stat *stbuf)
 {
 	const char *abspath = NULL;
+	log_msg("getattribute: %s",path);
 	/** check if path is root */
 	if(_is_path_root(path) == true) {
 		/*log_msg("PATH IS ROOT");*/
@@ -65,16 +66,44 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 		return 0;
 	}
 	/** check is path is a virtual suggestion */
-	log_msg("getattr: %s", path);
-	char *pre;
-	if(strlen(path)>10) {
-		pre = strdup(strrchr(path,'/'));
-		*(pre + 10) = '\0';
-		log_msg("%s",(strcmp(pre,"/SUGGESTED" ) == 0)?"SUGGESTED":"NOSUGGEST");
-		if(strcmp(pre,"/SUGGESTED" ) == 0) {
+	if(strlen(path) > 13) {
+		char *pre = strdup(strrchr(path,'/'));
+		*(pre + 13) = '\0';
+		if(strcmp(pre,"/SUGGESTEDFIL" ) == 0) {
 			stbuf->st_mode= S_IFREG | KW_STFIL;
+			free(pre);
+
+			pre = strdup(strrchr(path,'/'));
+
+			abspath=get_abspath_by_fname(pre + 18);
+			stbuf->st_mode= S_IFREG | KW_STFIL;
+
+			if(abspath == NULL) {
+			free(pre);
+			return -EIO;
+			}
+
+			if(stat(abspath,stbuf) == 0) {
+			free(pre);
+			free((char *)abspath);
+			return 0;
+			}
+
+			free(pre);
 			return 0;
 		}
+		if(strcmp(pre,"/SUGGESTEDTAG" ) == 0) {
+			stbuf->st_mode= S_IFDIR | KW_STDIR;
+			stbuf->st_nlink=1;
+			free(pre);
+			return 0;
+		}
+		/*if(strcmp(pre,"/SUGGESTON" ) == 0) {
+			stbuf->st_mode= S_IFDIR | KW_STDIR;
+			stbuf->st_nlink=1;
+			free(pre);
+			return 0;
+		}*/
 		free(pre);
 	}
 	/** check if path is valid for kwest */
@@ -109,6 +138,38 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	return -EACCES;
 }
 
+static void display_suggestions(char **suggest, char *msg, void *buf,
+                                fuse_fill_dir_t filler, struct stat st)
+{
+	if (*suggest == NULL) {
+		return ;
+	}
+
+	/*
+	st.st_mode = S_IFREG | KW_STFIL;
+	filler(buf, "SUGGESTON", &st, 0);
+	*/
+
+	int i = 0;
+	char *entry = (char *)malloc(strlen(*suggest) * sizeof(char));
+	char buffer[QUERY_SIZE];
+
+	do {
+		get_token(&entry, *suggest, i, ',');
+		if (strcmp(entry, "") == 0) {
+			break;
+		}
+		strcpy(buffer, msg);
+		strcat(buffer, entry);
+		filler(buf, buffer, &st, 0);
+		i++;
+	} while(1);
+
+	free((char *) entry);
+	free((char *) *suggest);
+	*suggest = NULL;
+}
+
 /**
  * @fn static int kwest_readdir(const char *path, void *buf,
  *            fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
@@ -132,7 +193,6 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void)fi;
 	const char *direntry = NULL;
 	char *suggest = NULL;
-	char buffer[QUERY_SIZE];
 	void *ptr = NULL;
 	struct stat st;
 	log_msg("readdir: %s",path);
@@ -172,45 +232,75 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		}
 	}
 
-	/** get File suggestions under current path */
-	suggest = get_file_suggestions(strrchr(path,'/') + 1);
-	if (suggest != NULL) {
-		int i = 0;
-		char *entry;
-		entry = (char *)malloc(strlen(suggest) * sizeof(char));
-		do {
-			get_token(&entry, suggest, i, ',');
-			if (strcmp(entry, "") == 0) {
-				break;
+	/* Display suggestions only if in user directory */
+	char *mypath = strdup(path + 1);
+	if(mypath != NULL) {
+		char *tmp = strchr(mypath,'/');
+		if(tmp != NULL) {
+			*tmp = '\0';
+			char *homedir, *username;
+
+			get_homedir(&homedir);
+			username = strrchr(homedir, '/') + 1;
+
+			if(strcmp(mypath,username) != 0) {
+				free(mypath);
+				return 0;
 			}
-			strcpy(buffer, "SUGGESTEDFILE - ");
-			strcat(buffer, entry);
-			filler(buf, buffer, &st, 0);
-			i++;
-		} while(1);
-		free((char *) entry);
-		free((char *) suggest);
+		}
+		free(mypath);
 	}
 
-	/** get Tag suggestions under current path */
-	suggest = get_tag_suggestions(strrchr(path,'/') + 1);
-	if (suggest != NULL) {
-		int i = 0;
-		char *entry;
-		entry = (char *)malloc(strlen(suggest) * sizeof(char));
-		do {
-			get_token(&entry, suggest, i, ',');
-			if (strcmp(entry, "") == 0) {
-				break;
+	/** get probably related File suggestions under current path */
+	suggest = get_file_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDFILPR - ", buf, filler, st);
+
+	/** get related File suggestions under current path */
+	suggest = get_file_suggestions_r(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDFILRE - ", buf, filler, st);
+
+	/** get probably related Tag suggestions under current path */
+	suggest = get_tag_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDTAGPR - ", buf, filler, st);
+
+	/** get related Tag suggestions under current path */
+	suggest = get_tag_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDTAGRE - ", buf, filler, st);
+
+	/** check is path is a virtual suggestion */
+	/*
+	if(strlen(path) > 13) {
+		char *pre = strdup(strrchr(path,'/'));
+		*(pre + 13) = '\0';
+		if(strcmp(pre,"/SUGGESTEDTAG" ) == 0) {
+			free(pre);
+
+			pre = strdup(strrchr(path,'/'));
+			*(pre + 17) = '/';
+
+			memset(&st, 0, sizeof(st));
+			st.st_mode = S_IFDIR | KW_STDIR;
+
+			/** get directories under current path * /
+			while((direntry = readdir_dirs(pre + 17, &ptr)) != NULL) {
+				if (filler(buf, direntry, &st, 0) == 1) {
+					break;
+				}
 			}
-			strcpy(buffer, "SUGGESTEDTAG - ");
-			strcat(buffer, entry);
-			filler(buf, buffer, &st, 0);
-			i++;
-		} while(1);
-		free((char *) entry);
-		free((char *) suggest);
+
+			direntry = NULL; ptr = NULL;
+			memset(&st, 0, sizeof(st));
+			st.st_mode = S_IFREG | KW_STFIL;
+			/** get files under current path * /
+			while((direntry = readdir_files(pre + 17, &ptr)) != NULL) {
+				if (filler(buf, direntry, &st, 0) == 1) {
+					break;
+				}
+			}
+		}
+		free(pre);
 	}
+	*/
 
 	return 0;
 }
@@ -376,6 +466,36 @@ static int kwest_open(const char *path, struct fuse_file_info *fi)
 		log_msg("cppath: %s",cppath);
 	//}
 	
+	/** check is path is a virtual suggestion */
+	if(strlen(path) > 13) {
+		char *pre = strdup(strrchr(path,'/'));
+		*(pre + 13) = '\0';
+		if(strcmp(pre,"/SUGGESTEDFIL" ) == 0) {
+			free(pre);
+
+			pre = strdup(strrchr(path,'/'));
+
+			abspath=get_abspath_by_fname(pre + 18);
+			if(abspath == NULL) {
+				log_msg("ABSOLUTE PATH ERROR");
+				free(pre);
+				return -EIO;
+			}
+
+			res = open(abspath, fi->flags);
+			if (res == -1) {
+				log_msg("COULD NOT OPEN FILE");
+				free(pre);
+				return -errno;
+			}
+
+			free(pre);
+			close(res);
+			return 0;
+		}
+		free(pre);
+	}
+
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("OPEN>>PATH NOT VALID");
 		return -ENOENT;
@@ -558,6 +678,42 @@ static int kwest_read(const char *path, char *buf, size_t size, off_t offset,
 	char *readfile = get_cp_path();
 	strcpy(readfile, path);
 	log_msg ("read: %s",path);
+
+	/** check is path is a virtual suggestion */
+	if(strlen(path) > 13) {
+		char *pre = strdup(strrchr(path,'/'));
+		*(pre + 13) = '\0';
+		if(strcmp(pre,"/SUGGESTEDFIL" ) == 0) {
+			free(pre);
+
+			pre = strdup(strrchr(path,'/'));
+
+			abspath=get_abspath_by_fname(pre + 18);
+			if(abspath == NULL) {
+				log_msg("ABSOLUTE PATH ERROR");
+				free(pre);
+				return -EIO;
+			}
+
+			fd = open(abspath, O_RDONLY); /* open file for reading */
+			if (fd == -1) {
+				log_msg("COULD NOT OPEN FILE");
+				free(pre);
+				return -errno;
+			}
+
+			res = pread(fd, buf, size, offset); /* pread doesn't lock file */
+			if (res == -1) {
+				log_msg("FILE READ ERROR");
+				res = -errno;
+			}
+
+			free(pre);
+			close(fd);
+			return res;
+		}
+		free(pre);
+	}
 
 	if(check_path_validity(path) != KW_SUCCESS) {
 		log_msg("PATH NOT VALID");

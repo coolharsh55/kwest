@@ -40,7 +40,7 @@ sqlite3_stmt *get_user_tagname(void);
 /*
  * Add association rule to database
  */
-int add_rule(int type, char *para1, char *para2);
+int add_rule(int type, float c, char *para1, char *para2);
 
 /* ---------------------------- FILE SUGGESTIONS----------------------------- */
 
@@ -50,9 +50,14 @@ int add_rule(int type, char *para1, char *para2);
 sqlite3_stmt *get_user_tagged_files(void);
 
 /*
- * Get file suggestions using apriori association rules
+ * Get file suggestion using apriori association rules for probablyrelated files
  */
-char *get_file_suggestions(char *tagname);
+char *get_file_suggestions_pr(char *tagname);
+
+/*
+ * Get file suggestion using apriori association rules for related files
+ */
+char *get_file_suggestions_r(char *tagname);
 
 /* ---------------------------- TAG SUGGESTIONS ----------------------------- */
 
@@ -62,9 +67,15 @@ char *get_file_suggestions(char *tagname);
 sqlite3_stmt *get_user_tagged_tags(void);
 
 /*
- * Get tag suggestions using apriori association rules
+ * Get tag suggestion using apriori association rules for probablyrelated tags
  */
-char *get_tag_suggestions(char *tagname);
+char *get_tag_suggestions_pr(char *tagname);
+
+/*
+ * Get tag suggestion using apriori association rules for related tags
+ */
+char *get_tag_suggestions_r(char *tagname);
+
 
 /* ----------------------------- OTHERS ------------------------------------- */
 
