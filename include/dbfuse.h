@@ -37,7 +37,6 @@ bool _is_path_root(const char *path);
  */
 int check_path_validity(const char *path);
 
-int check_path_tags_validity(const char *path);
 /*
  * checks whether given path has a directory entry
  */

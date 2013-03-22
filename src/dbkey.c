@@ -124,7 +124,7 @@ int set_tag_id(const char *tagname,int tagtype)
 		} else { /* Increment Tag ID */
 			return (tmp + 1);
 		}
-	} else if (tagtype == SYSTEM_TAG) {
+	} else { /* tagtype == SYSTEM_TAG */
 		/* Get count of existing System Tags */
 		sprintf(query,"select max(tno) from TagDetails where tno<%d;"
 		             ,USER_TAG_START);
@@ -134,19 +134,6 @@ int set_tag_id(const char *tagname,int tagtype)
 			return KW_FAIL;
 		} else if (tmp == NO_DB_ENTRY) { /* No Entry */
 			return SYSTEM_TAG_START;
-		} else { /* Increment Tag ID */
-			return (tmp + 1);
-		}
-	}  else { /* tagtype == USER_MADE_TAG */
-		/* Get count of existing User made Tags */
-		sprintf(query,"select max(tno) from TagDetails where tno>=%d;"
-		             ,USER_MADE_TAG);
-		tmp = get_field_lastid(query);
-
-		if(tmp == KW_FAIL) {
-			return KW_FAIL;
-		} else if (tmp == NO_DB_ENTRY) { /* No Entry */
-			return USER_MADE_TAG;
 		} else { /* Increment Tag ID */
 			return (tmp + 1);
 		}
