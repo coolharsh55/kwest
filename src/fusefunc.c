@@ -67,6 +67,12 @@ static int kwest_getattr(const char *path, struct stat *stbuf)
 	/** check is path is a virtual suggestion */
 	char *pre;
 	if(strlen(path)>10) {
+		char *pre = strdup(strrchr(path,'/'));
+		*(pre + 13) = '\0';
+		if(strcmp(pre,"/SUGGESTEDFIL" ) == 0) {
+			stbuf->st_mode= S_IFREG | KW_STFIL;
+			free(pre);
+
 		pre = strdup(strrchr(path,'/'));
 		*(pre + 10) = '\0';
 		log_msg("%s",(strcmp(pre,"/SUGGESTED" ) == 0)?"SUGGESTED":"NOSUGGEST");
@@ -172,9 +178,41 @@ static int kwest_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	}
 
 	/** get File suggestions under current path */
+	char *mypath = strdup(path + 1);
+	if(mypath != NULL) {
+		char *tmp = strchr(mypath,'/');
+		if(tmp != NULL) {
+			*tmp = '\0';
+			char *homedir, *username;
+
+			get_homedir(&homedir);
 	suggest = get_file_suggestions(strrchr(path,'/') + 1);
+
 	if (suggest != NULL) {
+				free(mypath);
 		int i = 0;
+			}
+		}
+		free(mypath);
+	}
+
+	/** get probably related File suggestions under current path */
+	suggest = get_file_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDFILPR - ", buf, filler, st);
+
+	/** get related File suggestions under current path */
+	suggest = get_file_suggestions_r(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDFILRE - ", buf, filler, st);
+
+	/** get probably related Tag suggestions under current path */
+	suggest = get_tag_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDTAGPR - ", buf, filler, st);
+
+	/** get related Tag suggestions under current path */
+	suggest = get_tag_suggestions_pr(strrchr(path,'/') + 1);
+	display_suggestions(&suggest, "SUGGESTEDTAGRE - ", buf, filler, st);
+
+	/** check is path is a virtual suggestion */
 		char *entry;
 		entry = (char *)malloc(strlen(suggest) * sizeof(char));
 		do {

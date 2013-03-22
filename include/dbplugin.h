@@ -38,5 +38,10 @@ void add_metadata_type(char *mime, char *metadata);
  */
 void associate_file_metadata(const char *mime,const char *tagname,
                             const char *fname);
+/*
+ * Form recursive association between tags to display metadata
+ */
+void associate_tag_metadata(const char *mime,const char *tagname,
+                            const char *parentmime,const char *parent);
 
 #endif
