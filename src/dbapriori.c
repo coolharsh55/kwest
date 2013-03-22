@@ -143,8 +143,8 @@ static void correct_items(char ***itemset, int *cnt, char *reference, int refcnt
  * @return void
  * @author SG
  */
-static void get_suggestions(char *tagname, char **suggest, int type, float conf,
-    sqlite3_stmt *(get_id)(const char *tagname),const char *(*get_name)(int id))
+static void get_suggestions(char *tagname, char **suggest, int type,
+    sqlite3_stmt *(get_id)(const char *tagname),const char *(*get_name)(int id), int assoctype)
 {
 	sqlite3_stmt *stmt;
 	char query[QUERY_SIZE];
@@ -162,8 +162,13 @@ static void get_suggestions(char *tagname, char **suggest, int type, float conf,
 	/* log_msg("Tag : %s #%d Files : %s", tagname, datacnt, data_str); */
 
 	/* analyze all association rules */
+	if(assoctype == ASSOC_RELATED) {
 	sprintf(query,"select tag1,tag2 from AssociationRules where type = %d"
-	              " and conf >= %f", type, conf);
+	              " and conf >= %f", type, MINCONFR);
+	} else if(assoctype == ASSOC_PROBABLY_RELATED) {
+	sprintf(query,"select tag1,tag2 from AssociationRules where type = %d"
+	              " and conf >= %f and conf < %f", type, MINCONF, MINCONFR);
+	}
 	sqlite3_prepare_v2(get_kwdb(),query,-1,&stmt,0);
 
 	do {
@@ -361,8 +366,8 @@ char *get_file_suggestions_pr(char *tagname)
 {
 	char *suggest = (char *) malloc(MAX_ITEMSET_LENGTH * sizeof(char));
 
-	get_suggestions(tagname, &suggest, FILES, MINCONF, get_fid_under_tag,
-	                get_file_name);
+	get_suggestions(tagname, &suggest, FILES, get_fid_under_tag,
+	                get_file_name,ASSOC_PROBABLY_RELATED);
 	/* log_msg("suggest : %s",suggest); */
 
 	if(strcmp(suggest,"") == 0) {
@@ -383,8 +388,8 @@ char *get_file_suggestions_r(char *tagname)
 {
 	char *suggest = (char *) malloc(MAX_ITEMSET_LENGTH * sizeof(char));
 
-	get_suggestions(tagname, &suggest, FILES, MINCONFR, get_fid_under_tag,
-	                get_file_name);
+	get_suggestions(tagname, &suggest, FILES, get_fid_under_tag,
+	                get_file_name,ASSOC_RELATED);
 	/* log_msg("suggest : %s",suggest); */
 
 	if(strcmp(suggest,"") == 0) {
@@ -442,8 +447,8 @@ char *get_tag_suggestions_pr(char *tagname)
 {
 	char *suggest = (char *) malloc(MAX_ITEMSET_LENGTH * sizeof(char));
 
-	get_suggestions(tagname, &suggest, TAGS, MINCONF, get_tid_under_tag,
-	                get_tag_name);
+	get_suggestions(tagname, &suggest, TAGS, get_tid_under_tag,
+	                get_tag_name,ASSOC_PROBABLY_RELATED);
 
 	if(strcmp(suggest,"") == 0) {
 		free((char *) suggest);
@@ -463,8 +468,8 @@ char *get_tag_suggestions_r(char *tagname)
 {
 	char *suggest = (char *) malloc(MAX_ITEMSET_LENGTH * sizeof(char));
 
-	get_suggestions(tagname, &suggest, TAGS, MINCONFR, get_tid_under_tag,
-	                get_tag_name);
+	get_suggestions(tagname, &suggest, TAGS, get_tid_under_tag,
+	                get_tag_name,ASSOC_RELATED);
 
 	if(strcmp(suggest,"") == 0) {
 		free((char *) suggest);
