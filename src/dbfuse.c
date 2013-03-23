@@ -475,11 +475,35 @@ int make_directory(const char *path, mode_t mode)
 	char *tptr = NULL;
 	char *parenttag = NULL;
 	char *t2 = NULL;
+	int tag_type = USER_MADE_TAG;
+	int no_of_slash = 0;
 	(void)mode;
 	log_msg ("make_directory: %s",path);
+	if (strstr(path, "/harsh/") != path) {
+		if (strstr(path, "/Audio/") != path) {
+			return KW_FAIL;
+		} else {
+			tptr = (char *)path + 1;
+			while (tptr != NULL) { 
+				no_of_slash++;
+				tptr = strchr(tptr+1, '/');
+			}
+			/** test cases: 
+			 * /Audio/Artist/NEW = 3
+			 * /Audio/Album/NEW = 3
+			 * /Audio/Artist/Album/NEW = 4
+			 */
+			if (no_of_slash < 3) {
+				return KW_FAIL;
+			} else {
+				tag_type = USER_TAG;
+			}
+		}
+	}
+	
 	newtag = (char *)get_entry_name(path);
 	
-	if (add_tag(newtag,USER_MADE_TAG) != KW_SUCCESS) {
+	if (add_tag(newtag,tag_type) != KW_SUCCESS) {
 		log_msg ("make_directory: failed to add tag %s",newtag);
 		return KW_FAIL;
 	}
