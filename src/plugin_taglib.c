@@ -141,8 +141,6 @@ static int metadata_extract(const char *filename, struct kw_metadata *s)
 	memchar = strdup(taglib_tag_album(tag));
 	memchar = format_string(memchar);
 	s->tagv[2] = memchar;
-//	log_msg("artist: %s", s->tagv[1]==NULL?"NULL":s->tagv[1]);
-//	log_msg("album: %s", s->tagv[2]==NULL?"NULL":s->tagv[2]);
 	if (strcmp(memchar,"") != 0) {
 		if (strcmp(memchar, s->tagv[1]) == 0) {
 			memchar = (char *)malloc(strlen(s->tagv[2])+8 * sizeof(char));

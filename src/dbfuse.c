@@ -372,13 +372,19 @@ int rename_this_file(const char *_from, const char *_to, int mode)
 	 * e.g. within audio, within image, within files etc.
 	 * moving between say audio and image should be RESTRICTED
 	 */
-	if (strcmp(strtok(from, "/"), strtok(to, "/")) != 0) {
-		if (strstr(_to, "/harsh") != _to) {
+	if (strstr(_to, "/harsh") != _to) {
+		if (strcmp(strtok(from, "/"), strtok(to, "/")) != 0) {
 			log_msg("DOMAIN of mv not same");
 			return -EPERM;
 		}
 	}
 	strcpy(from, _from); strcpy(to, _to);
+	/** @todo call metadata when moving from one Audio field to another
+	 * like artist to artist, album to album
+	 * v1: update only between /Audio/Artist/*1 to /Audio/Artist/*2
+	 */
+	/* NOTE: tag1 and tag2 are free pointers at this point */
+	 
 	*file1 = '\0'; *file2 = '\0';
 	file1 = strdup(file1 + 1);
 	tag1 = strrchr(_from,'/'); tag2 = strrchr(_to,'/');
@@ -401,6 +407,12 @@ int rename_this_file(const char *_from, const char *_to, int mode)
 			ret = KW_ERROR;
 		}
 	} else if (mode == DBFUSE_CP) {
+		if (strstr(_to, "/harsh") != _to) {
+			if (strcmp(strtok(from, "/"), strtok(to, "/")) == 0) {
+				log_msg("DOMAIN of cp not same");
+				return -EXDEV;
+			}
+		}
 		if (tag_file(tag2, file1) == KW_SUCCESS) {
 			log_msg("tag operation successfull");
 		} else {
