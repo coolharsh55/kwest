@@ -353,8 +353,8 @@ const char *get_newfile_path(const char *path)
  */
 int rename_this_file(const char *_from, const char *_to, int mode)
 {
-	char *from = strdup(_from);
-	char *to = strdup(_to);
+	char from[512]; strcpy(from, _from);
+	char to[512]; strcpy(to, _to);
 	char *file1 = strrchr(from, '/');
 	char *file2 = strrchr(to,   '/');
 	char *tag1 = NULL;
@@ -378,6 +378,7 @@ int rename_this_file(const char *_from, const char *_to, int mode)
 			return -EPERM;
 		}
 	}
+	strcpy(from, _from); strcpy(to, _to);
 	*file1 = '\0'; *file2 = '\0';
 	file1 = strdup(file1 + 1);
 	tag1 = strrchr(_from,'/'); tag2 = strrchr(_to,'/');
@@ -408,7 +409,7 @@ int rename_this_file(const char *_from, const char *_to, int mode)
 		}
 		log_msg("cp operation successfull");
 	}
-	free(from); free(to); free(file1);
+	free(file1);
 	return ret;
 }
 
