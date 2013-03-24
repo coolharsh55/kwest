@@ -23,6 +23,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include "dbfuse.h"
 #include "dbbasic.h"
@@ -359,7 +362,8 @@ int rename_this_file(const char *_from, const char *_to, int mode)
 	char *file2 = strrchr(to,   '/');
 	char *tag1 = NULL;
 	char *tag2 = NULL;
-	int ret = KW_SUCCESS;
+	struct passwd *pw = NULL;
+	int ret;
 	if (strcmp(file1, file2) == 0) {
 		log_msg("%s mv OK",file1);
 	} else {
@@ -372,12 +376,19 @@ int rename_this_file(const char *_from, const char *_to, int mode)
 	 * e.g. within audio, within image, within files etc.
 	 * moving between say audio and image should be RESTRICTED
 	 */
-	if (strstr(_to, "/harsh") != _to) {
+	pw = getpwuid(getuid());
+	ret = strlen(strrchr(pw->pw_dir,'/'));
+	tag1 = (char *)malloc(ret * sizeof(char));
+	strcpy(tag1, strrchr(pw->pw_dir, '/'));
+	ret = KW_SUCCESS;
+	if (strstr(_to, tag1) != _to) {
 		if (strcmp(strtok(from, "/"), strtok(to, "/")) != 0) {
 			log_msg("DOMAIN of mv not same");
+			free(tag1);
 			return -EPERM;
 		}
 	}
+	free(tag1);
 	strcpy(from, _from); strcpy(to, _to);
 	/** @todo call metadata when moving from one Audio field to another
 	 * like artist to artist, album to album
@@ -475,12 +486,17 @@ int make_directory(const char *path, mode_t mode)
 	char *tptr = NULL;
 	char *parenttag = NULL;
 	char *t2 = NULL;
+	struct passwd *pw = getpwuid(getuid());
 	int tag_type = USER_MADE_TAG;
-	int no_of_slash = 0;
+	int no_of_slash = strlen(strrchr(pw->pw_dir,'/'));
 	(void)mode;
+	t2 = (char *)malloc(no_of_slash * sizeof(char));
+	strcpy(t2, strrchr(pw->pw_dir, '/'));
 	log_msg ("make_directory: %s",path);
-	if (strstr(path, "/harsh/") != path) {
+	
+	if (strstr(path, t2) != path) {
 		if (strstr(path, "/Audio/") != path) {
+			free(t2);
 			return KW_FAIL;
 		} else {
 			tptr = (char *)path + 1;
@@ -494,13 +510,14 @@ int make_directory(const char *path, mode_t mode)
 			 * /Audio/Artist/Album/NEW = 4
 			 */
 			if (no_of_slash < 3) {
+				free(t2);
 				return KW_FAIL;
 			} else {
 				tag_type = USER_TAG;
 			}
 		}
 	}
-	
+	free(t2);
 	newtag = (char *)get_entry_name(path);
 	
 	if (add_tag(newtag,tag_type) != KW_SUCCESS) {
